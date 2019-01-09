@@ -1,5 +1,6 @@
 import React from 'react'
 
+import dedent from './dedent.js'
 import Node from './Node.js'
 import Port from'./Port.js'
 
@@ -75,6 +76,15 @@ class App extends React.Component {
                       'out': (new Port({id: 'out'}))
                     }
                   }}
+                  viewComponent={() => {
+                    return (<div>a view</div>)
+                  }}
+                  getViewComponentCode={dedent(`
+                  const viewComponent = (() => {
+                    return (<div>some view, eh?</div>)
+                  })
+                  return viewComponent
+                  `)}
                 />
               </td>
               <td style={tdStyle}>

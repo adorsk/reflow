@@ -2,16 +2,19 @@ import React from 'react'
 import _ from 'lodash'
 
 import CodeEditor from './CodeEditor.js'
+import Transformer from './Transformer.js'
 
 const nop = () => null
 
 class Node extends React.Component {
   constructor (props) {
     super(props)
+    this.transformer = new Transformer()
     this.state = {
       getTickFnCode: '',
       tickFn: null,
       getViewComponentCode: '',
+      viewComponent: null,
       inputs: null,
       outputs: null,
       nodeState: {},
@@ -50,6 +53,8 @@ class Node extends React.Component {
     this.state.getTickFnCode = (
       (this.state.tickFn) ? this.state.tickFn.toString() : ''
     )
+    this.state.viewComponent = props.viewComponent
+    this.state.getViewComponentCode = props.getViewComponentCode
     this.actions = {
       updateNodeState: (updates) => {
         this.setState({nodeState: {...this.state.nodeState, ...updates}})
@@ -78,12 +83,14 @@ class Node extends React.Component {
 
   tick({prevState = {}} = {}) {
     if (!this.state.tickFn) { return }
-    if (! this.shouldTick(prevState)) { return }
-    const fnOpts = {
+    this.state.tickFn.call(this, this.getFnOpts())
+  }
+
+  getFnOpts () {
+    return {
       ...(_.pick(this.state, ['ports', 'nodeState'])),
       actions: this.actions
     }
-    this.state.tickFn.call(this, fnOpts)
   }
 
   shouldTick (prevState) {
@@ -100,6 +107,7 @@ class Node extends React.Component {
         {this.renderLabel()}
         {this.renderEditorCells()}
         {this.renderView()}
+        {this.renderDebug()}
       </div>
     )
   }
@@ -161,13 +169,27 @@ class Node extends React.Component {
       cellKey: 'getViewComponent',
       defaultValue: _.get(this.state, 'getViewComponentCode'),
       onSave: (code) => {
-        this.setState({getViewComponentCode: code})
+        const transpiledCode = this.transformer.transform(code).code
+        // eslint-disable-next-line no-new-func
+        const getViewComponentFn = new Function('React', transpiledCode)
+        this.setState({viewComponent: getViewComponentFn(React)})
       },
     })
 
   }
 
   renderView () {
+    const {
+      ports,
+      nodeState,
+      actions,
+      viewComponent: View
+    } = this.state
+    if (!View) { return }
+    return (<View {...(this.getFnOpts())}/>)
+  }
+
+  renderDebug () {
     return (
       <div>
         <div>
