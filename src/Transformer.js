@@ -8,6 +8,7 @@ const transformOpts = {
   parserOpts: {
     allowReturnOutsideFunction: true
   },
+  sourceMaps: false,
 }
 
 class Transformer {

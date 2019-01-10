@@ -26,7 +26,6 @@ class DraggableItem extends React.Component {
         ...(child.props.style || {}),
         left: pos.x + 'px',
         top: pos.y + 'px',
-        color: 'blue'
       },
     })
   }
@@ -53,7 +52,7 @@ class DraggableItem extends React.Component {
   }
 }
 
-class DragCanvas extends React.Component {
+class DragContainer extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
@@ -133,6 +132,7 @@ class DragCanvas extends React.Component {
   render () {
     return (
       <div
+        className='drag-container'
         ref={this.containerRef}
         style={Object.assign({}, this.props.style)}
       >
@@ -224,4 +224,4 @@ class DragCanvas extends React.Component {
   }
 }
 
-export default DragCanvas
+export default DragContainer

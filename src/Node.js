@@ -6,7 +6,7 @@ import Transformer from './Transformer.js'
 
 const nop = () => null
 
-class Node extends React.Component {
+export class Node extends React.Component {
   constructor (props) {
     super(props)
     this.transformer = new Transformer()
@@ -103,7 +103,11 @@ class Node extends React.Component {
 
   render () {
     return (
-      <div>
+      <div
+        className='node'
+        ref={this.props.rootRef}
+        style={this.props.style}
+      >
         {this.renderLabel()}
         {this.renderEditorCells()}
         {this.renderView()}
@@ -113,8 +117,9 @@ class Node extends React.Component {
   }
 
   renderLabel () {
-    const label = this.props.label || this.props.id
-    return (<div>{label}</div>)
+    const node = this.props.node
+    const label = node.label || node.id
+    return (<div ref={this.props.labelRef}>{label}</div>)
   }
 
   renderEditorCells () {
@@ -214,6 +219,17 @@ class Node extends React.Component {
 
   getPort ({ioType, portId}) {
     return this.state.ports[ioType][portId]
+  }
+}
+
+export class DraggableNode extends React.Component {
+  render () {
+    const decoratedProps = {
+      ...this.props,
+      labelRef: this.props.dragHandleRef,
+      rootRef: this.props.dragContainerRef,
+    }
+    return (<Node {...decoratedProps} />)
   }
 }
 

@@ -1,9 +1,9 @@
 import React from 'react'
 import { storiesOf } from '@storybook/react'
 
-import DragCanvas from '../DragCanvas.js'
+import DragContainer from '../DragContainer.js'
 
-storiesOf('DragCanvas', module)
+storiesOf('DragContainer', module)
   .add('testing', () => {
     class Foo extends React.Component {
       render () {
@@ -24,7 +24,7 @@ storiesOf('DragCanvas', module)
     return (
       <div>
         yo
-        <DragCanvas
+        <DragContainer
           style={{position: 'relative'}}
         >
           {
@@ -39,7 +39,7 @@ storiesOf('DragCanvas', module)
               )
             })
           }
-        </DragCanvas>
+        </DragContainer>
       </div>
     )
   })
