@@ -1,7 +1,7 @@
 import React from 'react'
 import { storiesOf } from '@storybook/react'
 
-import DragContainer from '../DragContainer.js'
+import DragContainer from '../components/DragContainer.js'
 
 storiesOf('DragContainer', module)
   .add('testing', () => {

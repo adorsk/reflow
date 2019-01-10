@@ -1,7 +1,7 @@
 import React from 'react'
 import { storiesOf } from '@storybook/react'
 
-import Node from '../Node.js'
+import Node from '../components/Node.js'
 
 storiesOf('Node', module)
   .add('testing', () => {

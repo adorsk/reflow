@@ -2,7 +2,7 @@ import React from 'react'
 import _ from 'lodash'
 
 import CodeEditor from './CodeEditor.js'
-import Transformer from './Transformer.js'
+import Transformer from '../utils/Transformer.js'
 
 const nop = () => null
 

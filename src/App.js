@@ -1,8 +1,8 @@
 import React from 'react'
 
-import dedent from './dedent.js'
-import Node from './Node.js'
-import Port from'./Port.js'
+import dedent from './utils/dedent.js'
+import Node from './components/Node.js'
+import Port from'./engine/Port.js'
 
 class App extends React.Component {
   constructor (props) {

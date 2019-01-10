@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-import Deque from './deque.js'
+import Deque from './utils/deque.js'
 
 class Port {
   constructor (opts) {

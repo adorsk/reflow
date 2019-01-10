@@ -1,7 +1,7 @@
 import React from 'react'
 import _ from 'lodash'
 
-import { getPagePos } from './utils/index.js'
+import { getPagePos } from '../utils/index.js'
 
 import DragContainer from './DragContainer.js'
 import { DraggableNode } from './Node.js'
@@ -23,11 +23,14 @@ class GraphCanvas extends React.Component {
   }
 
   render () {
-    const { style, nodes } = this.props
-    const wires = {}
+    const { graph } = this.props
+    if (! graph) { return null }
+    const nodes = graph.nodes
+    const wires = graph.wires
     return (
       <div
-        className='graph' style={style || {}}
+        className='graph'
+        style={this.props.style}
       >
         <div
           className='graph-content-container'
