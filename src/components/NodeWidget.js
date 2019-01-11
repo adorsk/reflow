@@ -12,25 +12,28 @@ export class NodeWidget extends React.Component {
     this.transformer = new Transformer()
     this.state = {
       node: null,
+      nodeVersion: 0,
       getTickFnCode: '',
       getViewComponentCode: '',
       viewComponent: null,
     }
-
-    this.state.node = this.props.node
-    const node = this.state.node
+    const node = this.props.node
+    this.state.node = node
     const tickFn = node.tickFn
-    this.state.getTickFnCode = (tickFn) ? tickFn.toString() : ''
+    this.state.getTickFnCode = (
+      (tickFn) ? tickFn.toString() : (this.props.getTickFnCode || '')
+    )
     this.state.viewComponent = props.viewComponent
     this.state.getViewComponentCode = props.getViewComponentCode
   }
 
   componentDidMount () {
-    this.tick()
-  }
-
-  componentDidUpdate (prevProps, prevState) {
-    this.tick({prevState})
+    this.state.node.addChangeListener({
+      key: `${this.state.node.id}-widget`,
+      listener: (() => {
+        this.setState({nodeVersion: this.state.nodeVersion + 1})
+      }),
+    })
   }
 
   render () {
@@ -91,7 +94,8 @@ export class NodeWidget extends React.Component {
       cellKey: 'getTickFn',
       defaultValue: _.get(this.state, 'getTickFnCode'),
       onSave: (code) => {
-        this.setTickFn(this.compileCode(code))
+        const getTickFnFn = this.compileCode(code)
+        this.setTickFn(getTickFnFn())
       },
     })
   }
@@ -102,8 +106,8 @@ export class NodeWidget extends React.Component {
   }
 
   setTickFn (tickFn) {
-    console.log("Do something here!")
-    console.log("...like call node.setTickFn()")
+    const node = this.state.node
+    node.setTickFn(tickFn)
   }
 
   renderGetViewComponentCell () {

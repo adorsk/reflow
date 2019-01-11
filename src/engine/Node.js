@@ -24,23 +24,12 @@ export class Node {
       state: 0,
       tickFn: 0,
     }
-    this.changeListeners = {}
+    this.changeListeners = []
     this.debouncedTick = _.debounce(this.tick.bind(this), 0)
-    this.addChangeListener({
-      key: 'tickOnChange',
-      listener: (({versions}) => this.tickOnChange({versions})),
-    })
   }
 
   addChangeListener ({key, listener}) {
-    this.changeListeners[key] = listener
-  }
-
-  tickOnChange ({versions}) {
-    const shouldTick = _.some(['inputs', 'state', 'tickFn'], (key) => {
-      return (versions.current[key] !== versions.prev[key])
-    })
-    if (shouldTick) { this.debouncedTick() }
+    this.changeListeners.push({key, fn: listener})
   }
 
   addPort ({port, ioType}) {
@@ -48,33 +37,42 @@ export class Node {
     if (ioType === 'inputs') {
       port.registerListener({
         key: this.id,
-        listener: (() => this.dispatchChangeEvent({changed: 'inputs'})),
+        listener: (() => this.handleChange({changed: 'inputs'})),
       })
     } else if (ioType === 'outputs') {
       port.registerListener({
         key: this.id,
-        listener: (() => this.dispatchChangeEvent({changed: 'outputs'})),
+        listener: (() => this.handleChange({changed: 'outputs'})),
       })
     }
   }
 
-  dispatchChangeEvent ({changed = ''} = {}) {
+  handleChange ({changed = ''} = {}) {
     const versions = {
       prev: {...this.versions},
       current: {...this.versions, [changed]: this.versions[changed] + 1}
     }
     this.versions = versions.current
-    for (let listener of Object.values(this.changeListeners)) {
-      listener({versions})
+    for (let listener of this.changeListeners) {
+      listener.fn({node: this, versions})
     }
+    const shouldTick = _.some(['inputs', 'state', 'tickFn'], (key) => {
+      return (versions.current[key] !== versions.prev[key])
+    })
+    if (shouldTick) { this.debouncedTick() }
   }
 
-  tick({prevState = {}} = {}) {
+  tick() {
     const node = this.state.node
     if (this.tickFn) {
       this.tickFn({node: this})
     }
-    this.tickCount += 1
+    this.setTickCount(this.tickCount + 1)
+  }
+
+  setTickCount (tickCount) {
+    this.tickCount = tickCount
+    this.handleChange({changed: 'tickCount'})
   }
 
   getPort ({portId, ioType}) {
@@ -83,17 +81,18 @@ export class Node {
 
   updateState (updates) {
     this.state = {...this.state, ...updates}
-    this.dispatchChangeEvent({changed: 'state'})
+    this.handleChange({changed: 'state'})
   }
 
-  setTickFn ({tickFn}) {
+  setTickFn (tickFn) {
     this.tickFn = tickFn
-    this.dispatchChangeEvent({changed: 'tickFn'})
+    this.handleChange({changed: 'tickFn'})
   }
 
   toJson () {
     return {
       id: this.id,
+      tickCount: this.tickCount,
       state: this.state,
       ports: this.ports,
       tickFn: (
