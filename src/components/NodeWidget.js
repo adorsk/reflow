@@ -36,6 +36,11 @@ export class NodeWidget extends React.Component {
     })
   }
 
+  componentWillUnmount () {
+    const { node } = this.state
+    node.removeChangeListener({key: `${node.id}-widget`})
+  }
+
   render () {
     return (
       <div

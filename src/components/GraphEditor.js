@@ -102,8 +102,8 @@ class GraphEditor extends React.Component {
             style={{stroke: 'orange'}}
           />
           {
-            _.map(wires, (wire) => {
-              return this.renderWire({wire})
+            _.map(wires, (wire, key) => {
+              return this.renderWire({wire, key})
             })
           }
         </svg>
@@ -111,12 +111,12 @@ class GraphEditor extends React.Component {
     )
   }
 
-  renderWire ({wire}) {
+  renderWire ({wire, key}) {
     return (
       <Wire
-        key={wire.id}
-        afterMount={(el) => { this.wireRefs[wire.id] = el }}
-        beforeUnmount={() => { delete this.wireRefs[wire.id] }}
+        key={key}
+        afterMount={(el) => { this.wireRefs[key] = el }}
+        beforeUnmount={() => { delete this.wireRefs[key] }}
       />
     )
   }

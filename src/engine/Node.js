@@ -32,6 +32,10 @@ export class Node {
     this.changeListeners.push({key, fn: listener})
   }
 
+  removeChangeListener ({key}) {
+    this.changeListeners = _.filter(this.changeListeners, {key})
+  }
+
   addPort ({port, ioType}) {
     this.ports[ioType][port.id] = port
     if (ioType === 'inputs') {
@@ -77,6 +81,14 @@ export class Node {
 
   getPort ({portId, ioType}) {
     return this.ports[ioType][portId]
+  }
+
+  getOutputPort (portId) {
+    return this.getPort({ioType: 'outputs', portId})
+  }
+
+  getInputPort (portId) {
+    return this.getPort({ioType: 'inputs', portId})
   }
 
   updateState (updates) {
