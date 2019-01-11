@@ -11,6 +11,12 @@ export class Graph {
     this.nodes[node.id] = node
   }
 
+  removeNode ({nodeId}) {
+    const node = this.nodes[nodeId]
+    node.unmount()
+    delete this.nodes[nodeId]
+  }
+
   addWire (wire) {
     const key = this.deriveKeyForWire(wire)
     this.wires[key] = wire
@@ -31,7 +37,7 @@ export class Graph {
       ioType: 'outputs',
       portId: src.portId
     })
-    srcPort.registerListener({
+    srcPort.addListener({
       key,
       listener: (evt) => {
         if (evt.type !== 'push') { return }
@@ -42,6 +48,30 @@ export class Graph {
         destPort.pushValue(evt.data)
         srcPort.shiftValue()
       }
+    })
+  }
+
+  removeWire ({wire, key}) {
+    this.removeListenerForWire({wire, key})
+    delete this.wires[key]
+  }
+
+  removeListenerForWire ({wire, key}) {
+    const { src } = wire
+    const srcPort = this.nodes[src.nodeId].getPort({
+      ioType: 'outputs',
+      portId: src.portId
+    })
+    srcPort.removeListener({key})
+  }
+
+  unmount () {
+    _.each(this.wires, (wire, key) => {
+      this.removeWire({wire, key})
+    })
+
+    _.each(this.nodes, (node, id) => {
+      this.removeNode({nodeId: id})
     })
   }
 }

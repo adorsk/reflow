@@ -120,6 +120,10 @@ class GraphEditor extends React.Component {
       />
     )
   }
+
+  componentWillUnmount () {
+    this.props.graph.unmount()
+  }
 }
 
 export default GraphEditor

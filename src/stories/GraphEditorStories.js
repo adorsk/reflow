@@ -12,12 +12,17 @@ storiesOf('GraphEditor', module)
     const graph = new Graph()
     graph.addNode(new Node({
       id: 'a',
-      tickFn: ({node}) => {
-        console.log('a.tick')
-        setInterval(() => {
-          node.getOutputPort('out').pushValue(new Date())
-        }, 1000)
-      },
+      tickFn: ((() => {
+        let timer = null
+        const tickFn = ({node}) => {
+          console.log('a.tick')
+          timer = setInterval(() => {
+            node.getOutputPort('out').pushValue(new Date())
+          }, 1000)
+        }
+        tickFn.unmount = () => clearInterval(timer)
+        return tickFn
+      })()),
       ports: {
         outputs: {
           out: new Port({id: 'out'})

@@ -39,12 +39,12 @@ export class Node {
   addPort ({port, ioType}) {
     this.ports[ioType][port.id] = port
     if (ioType === 'inputs') {
-      port.registerListener({
+      port.addListener({
         key: this.id,
         listener: (() => this.handleChange({changed: 'inputs'})),
       })
     } else if (ioType === 'outputs') {
-      port.registerListener({
+      port.addListener({
         key: this.id,
         listener: (() => this.handleChange({changed: 'outputs'})),
       })
@@ -97,8 +97,15 @@ export class Node {
   }
 
   setTickFn (tickFn) {
+    this.unmountTickFn()
     this.tickFn = tickFn
     this.handleChange({changed: 'tickFn'})
+  }
+
+  unmountTickFn () {
+    if (this.tickFn && this.tickFn.unmount) {
+      this.tickFn.unmount({node: this})
+    }
   }
 
   toJson () {
@@ -112,6 +119,10 @@ export class Node {
         || this.tickFn
       )
     }
+  }
+
+  unmount () {
+    this.unmountTickFn()
   }
 }
 

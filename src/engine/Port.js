@@ -1,10 +1,11 @@
+import _ from 'lodash'
 import Deque from '../utils/deque.js'
 
 class Port {
   constructor (opts = {}) {
     this.id = opts.id
     this.values = new Deque()
-    this.listeners = {}
+    this.listeners = []
   }
 
   pushValue (value) {
@@ -16,13 +17,17 @@ class Port {
     this.dispatchEvent({type: 'shift', data: this.values.shift()})
   }
 
-  registerListener ({key, listener} = {}) {
-    this.listeners[key] = listener
+  addListener ({key, listener} = {}) {
+    this.listeners.push({key, fn: listener})
+  }
+
+  removeListener ({key, listener} = {}) {
+    this.listeners = _.filter(this.listeners, {key})
   }
 
   dispatchEvent (event) {
-    for (let listener of Object.values(this.listeners)) {
-      listener(event)
+    for (let listener of this.listeners) {
+      listener.fn(event)
     }
   }
 }
