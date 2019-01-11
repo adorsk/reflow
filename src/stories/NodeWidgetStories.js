@@ -1,17 +1,17 @@
 import React from 'react'
 import { storiesOf } from '@storybook/react'
 
-import Node from '../components/Node.js'
+import NodeWidget from '../components/NodeWidget.js'
 
-storiesOf('Node', module)
+storiesOf('NodeWidget', module)
   .add('testing', () => {
     const node = {
       id: 'a',
     }
     return (
       <div>
-        <h5>Node</h5>
-        <Node node={node} />
+        <h5>NodeWidget</h5>
+        <NodeWidget node={node} />
       </div>
     )
   })

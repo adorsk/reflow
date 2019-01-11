@@ -34,7 +34,6 @@
     "@storybook/react": "^4.1.6",
     "@storybook/addon-actions": "^4.1.6",
     "@storybook/addon-links": "^4.1.6",
-    "@storybook/addons": "^4.1.6",
-    "babel-loader": "^8.0.5"
+    "@storybook/addons": "^4.1.6"
   }
 }

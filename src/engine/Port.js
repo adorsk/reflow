@@ -1,9 +1,7 @@
-import _ from 'lodash'
-
-import Deque from './utils/deque.js'
+import Deque from '../utils/deque.js'
 
 class Port {
-  constructor (opts) {
+  constructor (opts = {}) {
     this.id = opts.id
     this.values = new Deque()
     this.listeners = {}
@@ -23,11 +21,10 @@ class Port {
   }
 
   dispatchEvent (event) {
-    _.each(this.listeners, (listener, key) => {
+    for (let listener of Object.values(this.listeners)) {
       listener(event)
-    })
+    }
   }
-  
 }
 
 export default Port

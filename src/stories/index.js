@@ -1,3 +1,3 @@
 import DragContainerStories from './DragContainerStories.js'
-import GraphCanvasStories from './GraphCanvasStories.js'
-import NodeStories from './NodeStories.js'
+import GraphEditorStories from './GraphEditorStories.js'
+import NodeWidgetStories from './NodeWidgetStories.js'

@@ -4,14 +4,14 @@ import _ from 'lodash'
 import { getPagePos } from '../utils/index.js'
 
 import DragContainer from './DragContainer.js'
-import { DraggableNode } from './Node.js'
+import { DraggableNodeWidget } from './NodeWidget.js'
 // import Wire from './Wire.js'
 
 class Wire extends React.Component {
   render () { return (<div>Wire</div>) }
 }
 
-class GraphCanvas extends React.Component {
+class GraphEditor extends React.Component {
   constructor (props) {
     super(props)
     this.nodeRefs = {}
@@ -25,8 +25,8 @@ class GraphCanvas extends React.Component {
   render () {
     const { graph } = this.props
     if (! graph) { return null }
-    const nodes = graph.nodes
-    const wires = graph.wires
+    const nodes = graph.getNodes()
+    const wires = graph.getWires()
     return (
       <div
         className='graph'
@@ -40,14 +40,14 @@ class GraphCanvas extends React.Component {
             width: '100%',
           }}
         >
-          {this.renderNodes({nodes})}
+          {this.renderNodeWidgets({nodes})}
           {this.renderWires({wires})}
         </div>
       </div>
     )
   }
 
-  renderNodes ({nodes}) {
+  renderNodeWidgets ({nodes}) {
     return (
       <DragContainer
         className='nodes-container'
@@ -55,19 +55,19 @@ class GraphCanvas extends React.Component {
       >
         {
           _.filter(nodes, (node) => !node.hidden).map((node) => {
-            return this.renderNode(node)
+            return this.renderNodeWidget(node)
           })
         }
       </DragContainer>
     )
   }
 
-  renderNode (node) {
+  renderNodeWidget (node) {
     return (
-      <DraggableNode
+      <DraggableNodeWidget
         key={node.id}
         node={node}
-        pos={node.pos}
+        pos={node.state.pos}
         afterMount={(el) => { this.nodeRefs[node.id] = el }}
         beforeUnmount={() => { delete this.nodeRefs[node.id] }}
       />
@@ -122,4 +122,4 @@ class GraphCanvas extends React.Component {
   }
 }
 
-export default GraphCanvas
+export default GraphEditor
