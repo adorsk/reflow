@@ -1,8 +1,11 @@
 import React from 'react'
 import _ from 'lodash'
+import { Accordion, Icon } from 'semantic-ui-react'
+import 'semantic-ui-css/semantic.min.css'
 
 import CodeEditor from './CodeEditor.js'
 import Transformer from '../utils/Transformer.js'
+import PortWidget from './PortWidget.js'
 
 const nop = () => null
 
@@ -16,6 +19,10 @@ export class NodeWidget extends React.Component {
       getTickFnCode: '',
       getViewComponentCode: '',
       viewComponent: null,
+      activeCells: {
+        getTickFn: true,
+        getViewComponent: true,
+      },
     }
     const node = this.props.node
     this.state.node = node
@@ -49,9 +56,17 @@ export class NodeWidget extends React.Component {
         style={this.props.style}
       >
         {this.renderLabel()}
-        {this.renderEditorCells()}
+        <div
+          className="body"
+          style={{
+            position: 'relative'
+          }}
+        >
+          {this.renderPorts()}
+          {this.renderEditorCells()}
+        </div>
         {this.renderView()}
-        {this.renderDebug()}
+        {this.props.showDebug ? this.renderDebug() : null}
       </div>
     )
   }
@@ -59,7 +74,73 @@ export class NodeWidget extends React.Component {
   renderLabel () {
     const node = this.state.node
     const label = node.label || node.id
-    return (<div ref={this.props.labelRef}>{label}</div>)
+    return (
+      <label
+        ref={this.props.labelRef}
+        style={{
+          display: 'block',
+          margin: 'auto',
+          textAlign: 'center',
+          background: 'gray',
+          width: '84%',
+          borderRadius: '5px 5px 0 0',
+          cursor: 'pointer',
+        }}
+      >
+        {label}
+      </label>
+  )
+  }
+
+  renderPorts () {
+    return (
+      <>
+        {this.renderInputPorts()}
+        {this.renderOutputPorts()}
+      </>
+    )
+  }
+
+  renderInputPorts () {
+    const { node } = this.state
+    const ports = node.getInputPorts()
+    return (
+      <div
+        className="input-ports"
+        style={{
+          position: 'absolute',
+          right: '100%',
+          top: '0',
+        }}
+      >
+        {
+          _.map(ports, (port) => {
+            return (<PortWidget port={port} />)
+          })
+        }
+      </div>
+    )
+  }
+
+  renderOutputPorts () {
+    const { node } = this.state
+    const ports = node.getOutputPorts()
+    return (
+      <div
+        className="output-ports"
+        style={{
+          position: 'absolute',
+          left: '100%',
+          top: '0',
+        }}
+      >
+        {
+          _.map(ports, (port) => {
+            return (<PortWidget port={port} />)
+          })
+        }
+      </div>
+    )
   }
 
   renderEditorCells () {
@@ -79,18 +160,35 @@ export class NodeWidget extends React.Component {
   }
 
   renderEditorCell ({cellKey, onSave = nop, defaultValue = ''}) {
+    const isActive = !!this.state.activeCells[cellKey]
     return (
-      <div>
-        <label>{cellKey}</label>
-        <CodeEditor
-          key={cellKey}
-          style={{height: '100px'}}
-          defaultValue={defaultValue}
-          onSave={({code}) => {
-            onSave(code)
+      <Accordion exclusive={false}>
+        <Accordion.Title
+          active={isActive}
+          index={cellKey}
+          onClick={() => {
+            this.setState({
+              activeCells: {
+                ...this.state.activeCells,
+                [cellKey]: !isActive,
+              }
+            })
           }}
-        />
-      </div>
+        >
+          <Icon name='dropdown' />
+          {cellKey}
+        </Accordion.Title>
+        <Accordion.Content active={isActive}>
+          <CodeEditor
+            key={cellKey}
+            style={{height: '100px'}}
+            defaultValue={defaultValue}
+            onSave={({code}) => {
+              onSave(code)
+            }}
+          />
+        </Accordion.Content>
+      </Accordion>
     )
   }
 

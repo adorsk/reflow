@@ -91,6 +91,9 @@ export class Node {
     return this.getPort({ioType: 'inputs', portId})
   }
 
+  getInputPorts () { return this.ports['inputs'] }
+  getOutputPorts () { return this.ports['outputs'] }
+
   updateState (updates) {
     this.state = {...this.state, ...updates}
     this.handleChange({changed: 'state'})
