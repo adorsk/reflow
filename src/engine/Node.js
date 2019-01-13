@@ -37,6 +37,7 @@ export class Node {
   }
 
   addPort ({port, ioType}) {
+    port.setNode(this)
     this.ports[ioType][port.id] = port
     if (ioType === 'inputs') {
       port.addListener({
@@ -81,6 +82,10 @@ export class Node {
 
   getPort ({portId, ioType}) {
     return this.ports[ioType][portId]
+  }
+
+  getPortsOfType ({ioType}) {
+    return this.ports[ioType]
   }
 
   getOutputPort (portId) {
@@ -137,7 +142,7 @@ Node.fromSpec = (spec) => {
       ports[ioType] = []
       const portSpecsForIoTypes = spec.ports[ioType]
       for (let key of Object.keys(portSpecsForIoTypes)) {
-        const portOpts = {id: key, ...portSpecsForIoTypes[key]}
+        const portOpts = {id: key, ioType, ...portSpecsForIoTypes[key]}
         ports[ioType].push(new Port(portOpts))
       }
     }

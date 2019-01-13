@@ -4,8 +4,14 @@ import Deque from '../utils/deque.js'
 class Port {
   constructor (opts = {}) {
     this.id = opts.id
+    this.node = opts.node
+    this.ioType = opts.ioType
     this.values = new Deque()
     this.listeners = []
+  }
+
+  setNode (node) {
+    this.node = node
   }
 
   pushValue (value) {

@@ -79,10 +79,10 @@ export class NodeWidget extends React.Component {
         ref={this.props.labelRef}
         style={{
           display: 'block',
-          margin: 'auto',
+          margin: '0 -6%',
           textAlign: 'center',
           background: 'gray',
-          width: '84%',
+          width: '112%',
           borderRadius: '5px 5px 0 0',
           cursor: 'pointer',
         }}
@@ -95,42 +95,21 @@ export class NodeWidget extends React.Component {
   renderPorts () {
     return (
       <>
-        {this.renderInputPorts()}
-        {this.renderOutputPorts()}
+        {this.renderPortsGroup({ioType: 'inputs'})}
+        {this.renderPortsGroup({ioType: 'outputs'})}
       </>
     )
   }
 
-  renderInputPorts () {
-    const { node } = this.state
-    const ports = node.getInputPorts()
+  renderPortsGroup ({ioType}) {
+    const leftRight = (ioType === 'inputs') ? 'right' : 'left'
+    const ports = this.state.node.getPortsOfType({ioType})
     return (
       <div
-        className="input-ports"
+        className={`${ioType}-ports`}
         style={{
           position: 'absolute',
-          right: '100%',
-          top: '0',
-        }}
-      >
-        {
-          _.map(ports, (port) => {
-            return (<PortWidget port={port} />)
-          })
-        }
-      </div>
-    )
-  }
-
-  renderOutputPorts () {
-    const { node } = this.state
-    const ports = node.getOutputPorts()
-    return (
-      <div
-        className="output-ports"
-        style={{
-          position: 'absolute',
-          left: '100%',
+          [leftRight]: '100%',
           top: '0',
         }}
       >
@@ -149,8 +128,9 @@ export class NodeWidget extends React.Component {
         className="cells"
         style={{
           width: '100%',
-          borderRadius: 5,
+          borderRadius: '0 0 5px',
           border: 'thin solid gray',
+          borderTop: 'none',
         }}
       >
         {this.renderGetTickFnCell()}

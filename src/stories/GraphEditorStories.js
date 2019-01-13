@@ -10,7 +10,7 @@ import Node from '../engine/Node.js'
 storiesOf('GraphEditor', module)
   .add('testing', () => {
     const graph = new Graph()
-    graph.addNode(new Node({
+    graph.addNode(Node.fromSpec({
       id: 'a',
       tickFn: ((() => {
         let timer = null
@@ -25,21 +25,21 @@ storiesOf('GraphEditor', module)
       })()),
       ports: {
         outputs: {
-          out: new Port({id: 'out'})
+          out: {},
         }
       },
       state: {
         pos: {x: 0, y: 0},
       },
     }))
-    graph.addNode(new Node({
+    graph.addNode(Node.fromSpec({
       id: 'b',
       tickFn: ({node}) => {
         console.log('b.tick')
       },
       ports: {
         inputs: {
-          in: new Port({id: 'in'})
+          in: {},
         }
       },
       state: {
