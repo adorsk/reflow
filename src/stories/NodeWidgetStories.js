@@ -25,9 +25,8 @@ storiesOf('NodeWidget', module)
     )
   })
   .add('draggable', () => {
-    const numPorts = 6
-    const portNums = [...((new Array(numPorts)).keys())]
-    const genPorts = (prefix) => {
+    const genPorts = ({prefix, numPorts}) => {
+      const portNums = [...((new Array(numPorts)).keys())]
       return portNums.reduce((ports, portNum) => {
         return Object.assign(ports, {[`${prefix}-${portNum}`]: {}})
       }, {})
@@ -35,8 +34,8 @@ storiesOf('NodeWidget', module)
     const node = Node.fromSpec({
       id: 'a',
       ports: {
-        inputs: genPorts('in'),
-        outputs: genPorts('out'),
+        inputs: genPorts({prefix: 'in', numPorts: 6}),
+        outputs: genPorts({prefix: 'out', numPorts: 4}),
       },
     })
     return (

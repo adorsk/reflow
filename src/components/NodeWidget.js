@@ -1,6 +1,6 @@
 import React from 'react'
 import _ from 'lodash'
-import { Accordion, Icon } from 'semantic-ui-react'
+import { Button, Accordion, Icon } from 'semantic-ui-react'
 import 'semantic-ui-css/semantic.min.css'
 
 import CodeEditor from './CodeEditor.js'
@@ -49,23 +49,21 @@ export class NodeWidget extends React.Component {
   }
 
   render () {
+    const style = Object.assign({
+      width: '150px',
+      borderRadius: '5px',
+      border: 'thin solid hsl(0, 0%, 90%)',
+    }, this.props.style)
     return (
       <div
         className='node'
         ref={this.props.rootRef}
-        style={this.props.style}
+        style={style}
       >
         {this.renderLabel()}
-        <div
-          className="body"
-          style={{
-            position: 'relative'
-          }}
-        >
-          {this.renderPorts()}
-          {this.renderEditorCells()}
-        </div>
-        {this.renderView()}
+        {this.renderPorts()}
+        {this.renderLaunchers()}
+        {this.renderLaunchers()}
         {this.props.showDebug ? this.renderDebug() : null}
       </div>
     )
@@ -79,12 +77,12 @@ export class NodeWidget extends React.Component {
         ref={this.props.labelRef}
         style={{
           display: 'block',
-          margin: '0 -6%',
           textAlign: 'center',
           background: 'gray',
-          width: '112%',
-          borderRadius: '5px 5px 0 0',
+          width: '100%',
+          borderBottom: 'thin solid gray',
           cursor: 'pointer',
+          borderRadius: '5px 5px 0 0',
         }}
       >
         {label}
@@ -94,30 +92,65 @@ export class NodeWidget extends React.Component {
 
   renderPorts () {
     return (
-      <>
-        {this.renderPortsGroup({ioType: 'inputs'})}
-        {this.renderPortsGroup({ioType: 'outputs'})}
-      </>
+      <div
+        className="ports"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '[left] 1fr [right] 1fr',
+          background: 'hsl(0, 0%, 95%)',
+          border: 'thin solid hsl(0, 0%, 90%)',
+        }}
+      >
+        <div style={{gridColumnStart: 'left'}}>
+          {this.renderPortsGroup({ioType: 'inputs'})}
+        </div>
+        <div style={{gridColumnStart: 'right'}}>
+          {this.renderPortsGroup({ioType: 'outputs'})}
+        </div>
+      </div>
     )
+      /*
+        {this.renderPortsGroup({ioType: 'inputs'})}
+          {this.renderPortsGroup({ioType: 'outputs'})}
+          */
   }
 
   renderPortsGroup ({ioType}) {
-    const leftRight = (ioType === 'inputs') ? 'right' : 'left'
+    const leftRight = (ioType === 'inputs') ? 'left' : 'right'
     const ports = this.state.node.getPortsOfType({ioType})
     return (
       <div
         className={`${ioType}-ports`}
         style={{
-          position: 'absolute',
-          [leftRight]: '100%',
-          top: '0',
+          width: '100%',
+          textAlign: leftRight,
         }}
       >
         {
           _.map(ports, (port) => {
-            return (<PortWidget port={port} />)
+            return (
+              <PortWidget
+                style={{width: '100%'}}
+                port={port}
+              />
+            )
           })
         }
+      </div>
+    )
+  }
+
+  renderLaunchers () {
+    return (
+      <div className="launchers">
+        <Button.Group
+          compact={true}
+          size='mini'
+        >
+          <Button>tickFn</Button>
+          <Button>viewFn</Button>
+          <Button>view</Button>
+        </Button.Group>
       </div>
     )
   }

@@ -9,15 +9,16 @@ export class PortWidget extends React.Component {
 
   render () {
     const { port } = this.props
+    const style = Object.assign({
+      position: 'relative',
+    }, this.props.style)
     return (
-      <div>
-        <div
-          className='port-content-container'
-          style={{position: 'relative'}}
-        >
-          {this.renderHandle({port})}
-          {this.renderLabel({port})}
-        </div>
+      <div
+        className='port'
+        style={style}
+      >
+        {this.renderHandle({port})}
+        {this.renderLabel({port})}
       </div>
     )
   }
@@ -27,13 +28,10 @@ export class PortWidget extends React.Component {
       <span
         key="label"
         style={{
-          background: 'hsl(0, 0%, 96%)',
           padding: '2px 4px',
-          borderRadius: '2px',
           display: 'inline-block',
           verticalAlign: 'middle',
-          border: 'thin solid hsl(0, 0%, 90%)',
-          width: '4em',
+          width: '100%',
         }}
       >
         {port.label || port.id}
