@@ -5,28 +5,32 @@ import { PortWidget } from '../components/PortWidget.js'
 import Port from '../engine/Port.js'
 
 storiesOf('PortWidget', module)
-  .add('default', () => {
-    const ports = ['inputs', 'outputs'].reduce((obj, key) => ({
-      ...obj,
-      [key]: {
-        id: `${key}-id`,
-        label: `${key}-label`,
-        ioType: key,
-      }
-    }), {})
+  .add('inputs', () => {
+    const ioType = 'inputs'
+    const ports = [
+      new Port({
+        id: 'p1',
+        label: 'p1-label',
+        ioType,
+      })
+    ]
     return (
-      <div>
-        <hr/>
-        <div>
-          <h5>inputs</h5>
-          <PortWidget port={ports.inputs}/>
-        </div>
-        <hr/>
-        <div>
-          <h5>outputs</h5>
-          <PortWidget port={ports.outputs}/>
-        </div>
-        <hr/>
+      <div
+        style={{
+          width: '150px',
+          marginLeft: '100px',
+          border: 'thin solid gray',
+          background: 'white',
+        }}
+      >
+        {
+          ports.map((port) => {
+            port.renderView = ({port}) => {
+              return (<div>view for {port.id}</div>)
+            }
+            return (<PortWidget port={port} />)
+          })
+        }
       </div>
     )
   })

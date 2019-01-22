@@ -1,10 +1,17 @@
 import React from 'react'
 
+import 'semantic-ui-css/semantic.min.css'
+import { Popup } from 'semantic-ui-react'
+
 
 export class PortWidget extends React.Component {
   constructor (props) {
     super(props)
+    this.state = {
+      showPopup: true,
+    }
     this.handleRef = React.createRef()
+    this.labelRef = React.createRef()
   }
 
   render () {
@@ -24,19 +31,35 @@ export class PortWidget extends React.Component {
   }
 
   renderLabel ({port}) {
+    let labelText = (<span>{port.label || port.id}</span>)
+    if (port.renderView) {
+      labelText = (
+        <Popup
+          trigger={labelText}
+          content={this.renderView({port})}
+          on='click'
+          position='left center'
+        />
+      )
+    }
     return (
       <span
         key="label"
         style={{
-          padding: '2px 4px',
+          padding: '2px .3em',
           display: 'inline-block',
           verticalAlign: 'middle',
           width: '100%',
         }}
       >
-        {port.label || port.id}
+        {labelText}
       </span>
     )
+  }
+
+  renderView ({port}) {
+    console.log('yo')
+    return port.renderView({port})
   }
 
   renderHandle ({port}) {
