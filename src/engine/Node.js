@@ -1,12 +1,17 @@
 import _ from 'lodash'
+import { observable } from 'mobx'
+import signals from 'signals'
 
 import Port from './Port.js'
 
+const DISPOSER = Symbol('disposer')
+
 export class Node {
   constructor (opts = {}) {
-    this.id = opts.id || ''
-    this.state = opts.state || {}
+    this.id = opts.id || _.uniqueId('node-')
+    this.changed = new signals.Signal()
     this.tickFn = opts.tickFn
+    this.setState(opts.state || new Map())
     this.ports = {
       inputs: {},
       outputs: {},
@@ -24,60 +29,42 @@ export class Node {
       state: 0,
       tickFn: 0,
     }
-    this.changeListeners = []
     this.debouncedTick = _.debounce(this.tick.bind(this), 0)
   }
 
-  addChangeListener ({key, listener}) {
-    this.changeListeners.push({key, fn: listener})
-  }
-
-  removeChangeListener ({key}) {
-    this.changeListeners = _.filter(this.changeListeners, {key})
+  setState (state) {
+    if (this.state) {
+      this.state[DISPOSER]() // unbind prev state
+      this.state = undefined
+    }
+    if (!state.observe) {
+      state = observable(state)
+    }
+    this.state = state
+    this.state[DISPOSER] = state.observe(this.changed.dispatch)
   }
 
   addPort ({port, ioType}) {
     port.setNode(this)
     this.ports[ioType][port.id] = port
     if (ioType === 'inputs') {
-      port.addListener({
-        key: this.id,
-        listener: (() => this.handleChange({changed: 'inputs'})),
-      })
-    } else if (ioType === 'outputs') {
-      port.addListener({
-        key: this.id,
-        listener: (() => this.handleChange({changed: 'outputs'})),
+      port.changed.add((evt) => {
+        if (evt.type === 'push') {
+          this.changed.dispatch({type: 'inputs'})
+        }
       })
     }
-  }
-
-  handleChange ({changed = ''} = {}) {
-    const versions = {
-      prev: {...this.versions},
-      current: {...this.versions, [changed]: this.versions[changed] + 1}
-    }
-    this.versions = versions.current
-    for (let listener of this.changeListeners) {
-      listener.fn({node: this, versions})
-    }
-    const shouldTick = _.some(['inputs', 'state', 'tickFn'], (key) => {
-      return (versions.current[key] !== versions.prev[key])
-    })
-    if (shouldTick) { this.debouncedTick() }
   }
 
   tick() {
-    const node = this.state.node
     if (this.tickFn) {
       this.tickFn({node: this})
     }
     this.setTickCount(this.tickCount + 1)
   }
 
-  setTickCount (tickCount) {
-    this.tickCount = tickCount
-    this.handleChange({changed: 'tickCount'})
+  setTickCount (count) {
+    this.tickCount = count 
   }
 
   getPort ({portId, ioType}) {
@@ -101,13 +88,11 @@ export class Node {
 
   updateState (updates) {
     this.state = {...this.state, ...updates}
-    this.handleChange({changed: 'state'})
   }
 
   setTickFn (tickFn) {
     this.unmountTickFn()
     this.tickFn = tickFn
-    this.handleChange({changed: 'tickFn'})
   }
 
   unmountTickFn () {

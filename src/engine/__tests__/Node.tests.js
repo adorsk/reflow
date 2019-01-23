@@ -1,4 +1,5 @@
 import Node from '../Node.js'
+import Port from '../Port.js'
 
 
 describe('Node', () => {
@@ -7,49 +8,44 @@ describe('Node', () => {
     jest.useFakeTimers()
   })
 
-  describe('onChange', () => {
-    it('ticks if inputs changed', () => {
-      const node = Node.fromSpec({
-        ports: {
-          inputs: {
-            'in': {}
-          }
-        }
-      })
-      expect(node.tickCount).toBe(0)
-      node.getPort({ioType: 'inputs', portId: 'in'}).pushValue('foo')
-      jest.runAllTimers()
-      expect(node.tickCount).toBe(1)
+  describe('constructor', () => {
+    it('creates a node', () => {
+      const node = new Node()
+      expect(node).toBeDefined()
     })
 
-    it('ticks if tickFn has changed', () => {
-      const node = Node.fromSpec({tickFn: () => null})
-      expect(node.tickCount).toBe(0)
-      node.setTickFn({tickFn: () => null})
-      jest.runAllTimers()
-      expect(node.tickCount).toBe(1)
-    })
-
-    it('ticks if state has changed', () => {
-      const node = Node.fromSpec({})
-      expect(node.tickCount).toBe(0)
-      node.updateState({foo: 'bar'})
-      jest.runAllTimers()
-      expect(node.tickCount).toBe(1)
-    })
-
-    it('does not tick if only outputs have changed', () => {
-      const node = Node.fromSpec({
-        ports: {
-          outputs: {
-            'out': {}
-          }
-        }
-      })
-      expect(node.tickCount).toBe(0)
-      node.getPort({ioType: 'outputs', portId: 'out'}).pushValue('foo')
-      jest.runAllTimers()
-      expect(node.tickCount).toBe(0)
+    it('sets default state to an observable map', () => {
+      const node = new Node()
+      expect(node.state.observe).toBeDefined()
     })
   })
+
+  describe('setState', () => {
+    it('sets up state observer', () => {
+      const node = new Node()
+      let changeCounter = 0
+      node.changed.add(() => changeCounter++)
+      const state = new Map()
+      node.setState(state)
+      expect(changeCounter).toEqual(0)
+      node.state.set('foo', 'bar')
+      expect(changeCounter).toEqual(1)
+    })
+  })
+
+  describe('addPort', () => {
+    describe('addInputPort', () => {
+      it('adds listener for port.pushed event', () => {
+        const node = new Node()
+        let changeCounter = 0
+        node.changed.add(() => changeCounter++)
+        expect(changeCounter).toEqual(0)
+        const port = new Port()
+        node.addPort({port, ioType: 'inputs'})
+        port.pushValue('someValue')
+        expect(changeCounter).toEqual(1)
+      })
+    })
+  })
+
 })

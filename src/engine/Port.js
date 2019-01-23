@@ -1,4 +1,6 @@
 import _ from 'lodash'
+import signals from 'signals'
+
 import Deque from '../utils/deque.js'
 
 class Port {
@@ -8,6 +10,7 @@ class Port {
     this.ioType = opts.ioType
     this.values = new Deque()
     this.listeners = []
+    this.changed = new signals.Signal()
   }
 
   setNode (node) {
@@ -16,11 +19,13 @@ class Port {
 
   pushValue (value) {
     this.values.push(value)
-    this.dispatchEvent({type: 'push', data: value})
+    this.changed.dispatch({type: 'push', data: value})
   }
 
   shiftValue () {
-    this.dispatchEvent({type: 'shift', data: this.values.shift()})
+    const value = this.values.shift()
+    this.changed.dispatch({type: 'shift', data: value})
+    return value
   }
 
   addListener ({key, listener} = {}) {
@@ -29,12 +34,6 @@ class Port {
 
   removeListener ({key, listener} = {}) {
     this.listeners = _.filter(this.listeners, {key})
-  }
-
-  dispatchEvent (event) {
-    for (let listener of this.listeners) {
-      listener.fn(event)
-    }
   }
 }
 
