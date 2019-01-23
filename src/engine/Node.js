@@ -34,14 +34,14 @@ export class Node {
 
   setState (state) {
     if (this.state) {
-      this.state[DISPOSER]() // unbind prev state
+      this[DISPOSER]() // unbind prev state
       this.state = undefined
     }
     if (!state.observe) {
-      state = observable(state)
+      state = observable.map(state)
     }
+    this[DISPOSER] = state.observe(this.changed.dispatch)
     this.state = state
-    this.state[DISPOSER] = state.observe(this.changed.dispatch)
   }
 
   addPort ({port, ioType}) {
@@ -69,6 +69,13 @@ export class Node {
 
   getPort ({portId, ioType}) {
     return this.ports[ioType][portId]
+  }
+
+  getPorts () {
+    return [
+      ...Object.values(this.ports.inputs),
+      ...Object.values(this.ports.outputs)
+    ] 
   }
 
   getPortsOfType ({ioType}) {

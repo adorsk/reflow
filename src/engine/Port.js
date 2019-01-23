@@ -6,11 +6,16 @@ import Deque from '../utils/deque.js'
 class Port {
   constructor (opts = {}) {
     this.id = opts.id
+    this.setState(opts.state)
     this.node = opts.node
     this.ioType = opts.ioType
     this.values = new Deque()
     this.listeners = []
     this.changed = new signals.Signal()
+  }
+
+  setState (state) {
+    this.state = state
   }
 
   setNode (node) {

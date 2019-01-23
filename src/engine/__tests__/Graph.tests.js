@@ -19,6 +19,48 @@ describe('Graph', () => {
   })
 
   describe('addNode', () => {
+    it('sets node state from store', () => {
+      const graph = new Graph()
+      const node = new Node({id: 'node1'})
+      const someState = graph.store.getOrCreate({key: node.id})
+      someState.set('foo', 'bar')
+      graph.store.set({key: node.id, value: someState})
+      expect(node.state).not.toEqual(someState)
+      graph.addNode(node)
+      expect(node.state).toEqual(someState)
+    })
+
+    it('sets node port states from store', () => {
+      const graph = new Graph()
+      const node = Node.fromSpec({
+        id: 'node1',
+        ports: {
+          inputs: {
+            'in1': {},
+          },
+          outputs: {
+            'out1': {},
+          },
+
+        }
+      })
+      const inPort = node.ports.inputs.in1
+      const outPort = node.ports.outputs.out1
+      const inPortState = graph.store.getOrCreate({
+        key: [node.id, node.ports.inputs.in1.id].join(':'),
+      })
+      inPortState.set('foo', 'bar')
+      const outPortState = graph.store.getOrCreate({
+        key: [node.id, node.ports.outputs.out1.id].join(':'),
+      })
+      outPortState.set('foo', 'bar')
+      expect(inPort.state).not.toEqual(inPortState)
+      expect(outPort.state).not.toEqual(outPortState)
+      graph.addNode(node)
+      expect(inPort.state).toEqual(inPortState)
+      expect(outPort.state).toEqual(outPortState)
+    })
+
     it('dispatches changed signal by default', () => {
       const g = new Graph()
       let changeCounter = 0

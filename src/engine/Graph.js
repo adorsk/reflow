@@ -1,13 +1,22 @@
 import _ from 'lodash'
 import signals from 'signals'
 
+import ObservableMapStore from '../utils/ObservableMapStore.js'
+
 export class Graph {
-  constructor () {
+  constructor ({id, store} = {}) {
+    this.id = id || _.uniqueId('graph-')
+    this.store = store || this.createStore()
+    this.state = this.store.getOrCreate({key: this.id})
     this.wires = {}
     this.nodes = {}
     this.tickCount = 0
     this.changed = new signals.Signal()
     this.changed.add(_.debounce(this.onChanged.bind(this), 0))
+  }
+
+  createStore () {
+    return new ObservableMapStore()
   }
 
   onChanged () {
@@ -43,6 +52,11 @@ export class Graph {
 
   addNode (node, opts = {noSignals: false}) {
     this.nodes[node.id] = node
+    node.setState(this.store.getOrCreate({key: node.id}))
+    for (let port of node.getPorts()) {
+      const key = [node.id, port.id].join(':')
+      port.setState(this.store.getOrCreate({key}))
+    }
     node.changed.add(this.changed.dispatch)
     if (!opts.noSignals) {
       this.changed.dispatch()
