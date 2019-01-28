@@ -1,13 +1,18 @@
 import _ from 'lodash'
 import signals from 'signals'
+import { observable } from 'mobx'
 
 import ObservableMapStore from '../utils/ObservableMapStore.js'
 
 export class Graph {
-  constructor ({id, store} = {}) {
+  constructor ({id, store, state} = {}) {
     this.id = id || _.uniqueId('graph-')
     this.store = store || this.createStore()
-    this.state = this.store.getOrCreate({key: this.id})
+    if (state) {
+      state = (state.observe) ? state : observable(state)
+      this.store.set({key: this.id, state})
+    }
+    this.setState(this.store.getOrCreate({key: this.id}))
     this.wires = {}
     this.nodes = {}
     this.tickCount = 0
@@ -17,6 +22,10 @@ export class Graph {
 
   createStore () {
     return new ObservableMapStore()
+  }
+
+  setState (state) {
+    this.state = state
   }
 
   onChanged () {

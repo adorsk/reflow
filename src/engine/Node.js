@@ -4,7 +4,7 @@ import signals from 'signals'
 
 import Port from './Port.js'
 
-const DISPOSER = Symbol('disposer')
+const DISPOSER_KEY = Symbol('disposer_key')
 
 export class Node {
   constructor (opts = {}) {
@@ -33,14 +33,9 @@ export class Node {
   }
 
   setState (state) {
-    if (this.state) {
-      this[DISPOSER]() // unbind prev state
-      this.state = undefined
-    }
-    if (!state.observe) {
-      state = observable.map(state)
-    }
-    this[DISPOSER] = state.observe(this.changed.dispatch)
+    if (this[DISPOSER_KEY]) { this[DISPOSER_KEY]() } // unbind prev state
+    state = (state.observe) ? state : observable.map(state)
+    this[DISPOSER_KEY] = state.observe(this.changed.dispatch)
     this.state = state
   }
 
