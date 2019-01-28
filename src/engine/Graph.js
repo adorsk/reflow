@@ -50,7 +50,7 @@ export class Graph {
       const srcPort = this.nodes[src.nodeId].getOutputPort(src.portId)
       const destPort = this.nodes[dest.nodeId].getInputPort(dest.portId)
       while (srcPort.values.length) {
-        destPort.pushValue(srcPort.shiftValue())
+        destPort.pushValues([srcPort.shiftValue()])
       }
     }
   }

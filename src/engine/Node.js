@@ -62,7 +62,14 @@ export class Node {
     this.tickCount = count 
   }
 
-  getPort ({portId, ioType}) {
+  getPort (arg1) {
+    let portId, ioType
+    if (typeof arg1 === 'string') {
+      [ioType, portId] = arg1.split(':')
+    } else {
+      portId = arg1.portId
+      ioType = arg1.ioType
+    }
     return this.ports[ioType][portId]
   }
 
@@ -87,6 +94,14 @@ export class Node {
 
   getInputPorts () { return this.ports['inputs'] }
   getOutputPorts () { return this.ports['outputs'] }
+
+  hasHotInputs () {
+    return _.some(this.getInputPorts(), port => port.hasHotValues())
+  }
+
+  quenchInputs () {
+    _.each(this.getInputPorts(), port => port.quenchHotValues())
+  }
 
   updateState (updates) {
     this.state = {...this.state, ...updates}

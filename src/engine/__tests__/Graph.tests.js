@@ -141,10 +141,10 @@ describe('Graph', () => {
         dest: {nodeId: n2.id, portId: 'in'},
       })
       const value = 'someValue'
-      n1.getOutputPort('out').pushValue(value)
-      expect(n2.getInputPort('in').values.toArray()).toEqual([])
+      n1.getOutputPort('out').pushValues([value])
+      expect(n2.getInputPort('in').values).toEqual([])
       g.propagateOutputs()
-      expect(n2.getInputPort('in').values.toArray()).toEqual([value])
+      expect(n2.getInputPort('in').values).toEqual([value])
     })
   })
 
@@ -179,12 +179,12 @@ describe('Graph', () => {
         {noSignals: true}
       )
       const value = 'someValue'
-      n1.getOutputPort('out').pushValue(value)
+      n1.getOutputPort('out').pushValues([value])
       expect([n1.tickCount, n2.tickCount]).toEqual([0, 0])
-      expect(n2.getInputPort('in').values.toArray()).toEqual([])
+      expect(n2.getInputPort('in').values).toEqual([])
       g.tick()
       expect([n1.tickCount, n2.tickCount]).toEqual([1, 1])
-      expect(n2.getInputPort('in').values.toArray()).toEqual([value])
+      expect(n2.getInputPort('in').values).toEqual([value])
     })
   })
 })

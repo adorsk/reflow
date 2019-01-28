@@ -41,11 +41,23 @@ class Port {
   }
 
   pushValues (values, opts = {}) {
-    opts = {hot: true, ...opts}
+    opts = {hot: true, noSignals: false, ...opts}
     this.values.push(...values)
     if (opts.hot) {
       this.hotValues.push(...values)
     }
+    if (!opts.noSignals) {
+      this.changed.dispatch({type: 'push'})
+    }
+  }
+
+  shiftValue (opts = {}) {
+    opts = {noSignals: false, ...opts}
+    const value = this.values.shift()
+    if (!opts.noSignals) {
+      this.changed.dispatch({type: 'shift'})
+    }
+    return value
   }
 
   quenchHotValues () {
