@@ -2,7 +2,7 @@ import _ from 'lodash'
 import signals from 'signals'
 import { observable } from 'mobx'
 
-import ObservableMapStore from '../utils/ObservableMapStore.js'
+import ObservableMapStore from './ObservableMapStore.js'
 
 export class Graph {
   constructor ({id, store, state} = {}) {
@@ -40,8 +40,13 @@ export class Graph {
 
   tickNodes () {
     for (let node of Object.values(this.nodes)) {
-      node.tick()
+      this.tickNode(node)
     }
+  }
+
+  tickNode (node) {
+    node.tick()
+    node.quenchInputs()
   }
 
   propagateOutputs () {
@@ -105,6 +110,23 @@ export class Graph {
     _.each(this.nodes, (node, id) => {
       this.removeNode({nodeId: id})
     })
+  }
+
+  toString () {
+    let seen = []
+    return JSON.stringify(
+      this,
+      function handleCircular(key, val) {
+        if (val != null && typeof val == "object") {
+          if (seen.indexOf(val) >= 0) {
+            return
+          }
+          seen.push(val)
+        }
+        return val
+      },
+      2
+    )
   }
 }
 

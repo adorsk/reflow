@@ -134,6 +134,23 @@ export class Node {
   unmount () {
     this.unmountTickFn()
   }
+
+  toString () {
+    let seen = []
+    return JSON.stringify(
+      this,
+      function handleCircular(key, val) {
+        if (val != null && typeof val == "object") {
+          if (seen.indexOf(val) >= 0) {
+            return
+          }
+          seen.push(val)
+        }
+        return val
+      },
+      2
+    )
+  }
 }
 
 Node.fromSpec = (spec) => {

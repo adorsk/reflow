@@ -1,10 +1,6 @@
 import React from 'react'
 import _ from 'lodash'
-import { Button, Accordion, Icon } from 'semantic-ui-react'
-import 'semantic-ui-css/semantic.min.css'
 
-import CodeEditor from './CodeEditor.js'
-import Transformer from '../utils/Transformer.js'
 import PortWidget from './PortWidget.js'
 
 const nop = () => null
@@ -12,40 +8,24 @@ const nop = () => null
 export class NodeWidget extends React.Component {
   constructor (props) {
     super(props)
-    this.transformer = new Transformer()
-    this.state = {
-      node: null,
-      nodeVersion: 0,
-      getTickFnCode: '',
-      getViewComponentCode: '',
-      viewComponent: null,
-      activeCells: {
-        getTickFn: true,
-        getViewComponent: true,
-      },
-    }
-    const node = this.props.node
-    this.state.node = node
-    const tickFn = node.tickFn
-    this.state.getTickFnCode = (
-      (tickFn) ? tickFn.toString() : (this.props.getTickFnCode || '')
-    )
-    this.state.viewComponent = props.viewComponent
-    this.state.getViewComponentCode = props.getViewComponentCode
+    this.state = { nodeVersion: 0 }
   }
 
   componentDidMount () {
-    this.state.node.addChangeListener({
-      key: `${this.state.node.id}-widget`,
-      listener: (() => {
-        this.setState({nodeVersion: this.state.nodeVersion + 1})
-      }),
-    })
+    const { node } = this.props
+    if (! node ) { return }
+    this.onNodeChanged = () => {
+      this.setState({nodeVersion: this.state.nodeVersion + 1})
+    }
+    node.changed.add(this.onNodeChanged)
   }
 
   componentWillUnmount () {
-    const { node } = this.state
-    node.removeChangeListener({key: `${node.id}-widget`})
+    const { node } = this.props
+    if (! node) { return }
+    if (this.onNodeChange) {
+      node.changed.remove(this.onNodeChanged)
+    }
   }
 
   render () {
@@ -62,15 +42,13 @@ export class NodeWidget extends React.Component {
       >
         {this.renderLabel()}
         {this.renderPorts()}
-        {this.renderLaunchers()}
-        {this.renderLaunchers()}
         {this.props.showDebug ? this.renderDebug() : null}
       </div>
     )
   }
 
   renderLabel () {
-    const node = this.state.node
+    const { node } = this.props
     const label = node.label || node.id
     return (
       <label
@@ -109,15 +87,12 @@ export class NodeWidget extends React.Component {
         </div>
       </div>
     )
-      /*
-        {this.renderPortsGroup({ioType: 'inputs'})}
-          {this.renderPortsGroup({ioType: 'outputs'})}
-          */
   }
 
   renderPortsGroup ({ioType}) {
+    const { node } = this.props
     const leftRight = (ioType === 'inputs') ? 'left' : 'right'
-    const ports = this.state.node.getPortsOfType({ioType})
+    const ports = node.getPortsOfType({ioType})
     return (
       <div
         className={`${ioType}-ports`}
@@ -130,6 +105,7 @@ export class NodeWidget extends React.Component {
           _.map(ports, (port) => {
             return (
               <PortWidget
+                key={port.id}
                 style={{width: '100%'}}
                 port={port}
               />
@@ -140,118 +116,8 @@ export class NodeWidget extends React.Component {
     )
   }
 
-  renderLaunchers () {
-    return (
-      <div className="launchers">
-        <Button.Group
-          compact={true}
-          size='mini'
-        >
-          <Button>tickFn</Button>
-          <Button>viewFn</Button>
-          <Button>view</Button>
-        </Button.Group>
-      </div>
-    )
-  }
-
-  renderEditorCells () {
-    return (
-      <div
-        className="cells"
-        style={{
-          width: '100%',
-          borderRadius: '0 0 5px',
-          border: 'thin solid gray',
-          borderTop: 'none',
-        }}
-      >
-        {this.renderGetTickFnCell()}
-        {this.renderGetViewComponentCell()}
-      </div>
-    )
-  }
-
-  renderEditorCell ({cellKey, onSave = nop, defaultValue = ''}) {
-    const isActive = !!this.state.activeCells[cellKey]
-    return (
-      <Accordion exclusive={false}>
-        <Accordion.Title
-          active={isActive}
-          index={cellKey}
-          onClick={() => {
-            this.setState({
-              activeCells: {
-                ...this.state.activeCells,
-                [cellKey]: !isActive,
-              }
-            })
-          }}
-        >
-          <Icon name='dropdown' />
-          {cellKey}
-        </Accordion.Title>
-        <Accordion.Content active={isActive}>
-          <CodeEditor
-            key={cellKey}
-            style={{height: '100px'}}
-            defaultValue={defaultValue}
-            onSave={({code}) => {
-              onSave(code)
-            }}
-          />
-        </Accordion.Content>
-      </Accordion>
-    )
-  }
-
-  renderGetTickFnCell () {
-    return this.renderEditorCell({
-      cellKey: 'getTickFn',
-      defaultValue: _.get(this.state, 'getTickFnCode'),
-      onSave: (code) => {
-        const getTickFnFn = this.compileCode(code)
-        this.setTickFn(getTickFnFn())
-      },
-    })
-  }
-
-  compileCode (code) {
-    // eslint-disable-next-line no-new-func
-    return new Function('opts', code)
-  }
-
-  setTickFn (tickFn) {
-    const node = this.state.node
-    node.setTickFn(tickFn)
-  }
-
-  renderGetViewComponentCell () {
-    return this.renderEditorCell({
-      cellKey: 'getViewComponent',
-      defaultValue: _.get(this.state, 'getViewComponentCode'),
-      onSave: (code) => {
-        const transpiledCode = this.transformer.transform(code).code
-        // eslint-disable-next-line no-new-func
-        const getViewComponentFn = new Function('React', transpiledCode)
-        this.setState({viewComponent: getViewComponentFn(React)})
-      },
-    })
-
-  }
-
-  renderView () {
-    const { node, viewComponent: View } = this.state
-    if (!View) { return }
-    return (<View {...(this.getFnOpts())}/>)
-  }
-
   renderDebug () {
-    return this.jsonPre(this.state.node.toJson())
-  }
-
-  jsonPre (obj) {
-    return (<pre>{JSON.stringify(obj, null, 2)}</pre>)
+    return (<pre>{this.props.node.toString()}</pre>)
   }
 }
 

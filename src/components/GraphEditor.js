@@ -65,6 +65,7 @@ class GraphEditor extends React.Component {
   renderNodeWidget (node) {
     return (
       <DraggableNodeWidget
+        showDebug={true}
         key={node.id}
         node={node}
         pos={node.state.pos}
