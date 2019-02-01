@@ -11,7 +11,7 @@ class Wire extends React.Component {
   render () { return (<div>Wire</div>) }
 }
 
-class GraphEditor extends React.Component {
+class GraphView extends React.Component {
   constructor (props) {
     super(props)
     this.nodeRefs = {}
@@ -127,4 +127,4 @@ class GraphEditor extends React.Component {
   }
 }
 
-export default GraphEditor
+export default GraphView

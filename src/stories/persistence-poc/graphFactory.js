@@ -9,6 +9,7 @@ const graphFactory = ({store} = {}) => {
   graph.addNode(Node.fromSpec({
     id: 'counter',
     tickFn: (({node}) => {
+      if (!node.state.get('active')) { return }
       if (node.state.get('sleeping')) { return }
       if (typeof node.state.get('counter') === 'undefined') {
         node.state.set('counter', 0)
@@ -25,7 +26,15 @@ const graphFactory = ({store} = {}) => {
       outputs: {
         'out': {}
       }
-    }
+    },
+    getViewComponent: ({node}) => {
+      const ViewComponent = () => {
+        return (
+          <div>Foo</div>
+        )
+      }
+      return ViewComponent
+    },
   }))
   return graph
 }

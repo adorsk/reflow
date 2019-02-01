@@ -1,5 +1,5 @@
 import DragContainerStories from './DragContainerStories.js'
-import GraphEditorStories from './GraphEditorStories.js'
+import GraphViewStories from './GraphViewStories.js'
 import NodeWidgetStories from './NodeWidgetStories.js'
 import PortWidgetStories from './PortWidgetStories.js'
 import './hmr-poc/stories.js'

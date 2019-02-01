@@ -1,13 +1,13 @@
 import React from 'react'
 import { storiesOf } from '@storybook/react'
 
-import GraphEditor from '../components/GraphEditor.js'
+import GraphView from '../components/GraphView.js'
 import Graph from '../engine/Graph.js'
 import Port from '../engine/Port.js'
 import Node from '../engine/Node.js'
 
 
-storiesOf('GraphEditor', module)
+storiesOf('GraphView', module)
   .add('testing', () => {
     const graph = new Graph()
     graph.addNode(Node.fromSpec({
@@ -53,8 +53,8 @@ storiesOf('GraphEditor', module)
     graph.getNodes()['a'].tick()
     return (
       <div>
-        <h5>GraphEditor</h5>
-        <GraphEditor
+        <h5>GraphView</h5>
+        <GraphView
           graph={graph}
         />
       </div>
