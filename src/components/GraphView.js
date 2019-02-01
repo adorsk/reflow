@@ -65,7 +65,7 @@ class GraphView extends React.Component {
   renderNodeWidget (node) {
     return (
       <DraggableNodeWidget
-        showDebug={true}
+        showDebug={false}
         key={node.id}
         node={node}
         pos={node.state.pos}

@@ -9,6 +9,7 @@ const DISPOSER_KEY = Symbol('disposer_key')
 export class Node {
   constructor (opts = {}) {
     this.id = opts.id || _.uniqueId('node-')
+    this.ctx = opts.ctx
     this.changed = new signals.Signal()
     this.tickFn = opts.tickFn
     this.setState(opts.state || new Map())

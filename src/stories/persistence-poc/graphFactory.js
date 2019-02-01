@@ -1,3 +1,5 @@
+import React from 'react'
+
 import Graph from '../../engine/Graph.js'
 import Node from '../../engine/Node.js'
 
@@ -27,14 +29,34 @@ const graphFactory = ({store} = {}) => {
         'out': {}
       }
     },
-    getViewComponent: ({node}) => {
-      const ViewComponent = () => {
-        return (
-          <div>Foo</div>
-        )
-      }
-      return ViewComponent
-    },
+    ctx: {
+      getViewComponent: ({node}) => {
+        class ViewComponent extends React.Component {
+          render () {
+            const { node } = this.props
+            return (
+              <div>
+                <label>
+                  active
+                  <input
+                    name="active"
+                    type="checkbox"
+                    checked={!!node.state.get('active')}
+                    onChange={(evt) => {
+                      node.state.set('active', event.target.checked)
+                    }}
+                  />
+                </label>
+                <div>
+                  counter: {node.state.get('counter')}
+                </div>
+              </div>
+            )
+          }
+        }
+        return ViewComponent
+      },
+    }
   }))
   return graph
 }

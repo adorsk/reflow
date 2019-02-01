@@ -9,6 +9,7 @@ export class NodeWidget extends React.Component {
   constructor (props) {
     super(props)
     this.state = { nodeVersion: 0 }
+    this.ViewComponent = this.getViewComponent({node: props.node})
   }
 
   componentDidMount () {
@@ -18,6 +19,13 @@ export class NodeWidget extends React.Component {
       this.setState({nodeVersion: this.state.nodeVersion + 1})
     }
     node.changed.add(this.onNodeChanged)
+  }
+
+  getViewComponent ({node}) {
+    if (node.ctx && node.ctx.getViewComponent) {
+      return node.ctx.getViewComponent({node})
+    }
+    return null
   }
 
   componentWillUnmount () {
@@ -42,6 +50,7 @@ export class NodeWidget extends React.Component {
       >
         {this.renderLabel()}
         {this.renderPorts()}
+        {this.renderView()}
         {this.props.showDebug ? this.renderDebug() : null}
       </div>
     )
@@ -112,6 +121,17 @@ export class NodeWidget extends React.Component {
             )
           })
         }
+      </div>
+    )
+  }
+
+  renderView () {
+    const { node } = this.props
+    if (!this.ViewComponent) { return }
+    const ViewComponent = this.ViewComponent
+    return (
+      <div className="view">
+        <ViewComponent node={node} />
       </div>
     )
   }
