@@ -10,6 +10,10 @@ export class NodeWidget extends React.Component {
     super(props)
     this.state = { nodeVersion: 0 }
     this.ViewComponent = this.getViewComponent({node: props.node})
+    this.portWidgets = {
+      inputs: {},
+      outputs: {},
+    }
   }
 
   componentDidMount () {
@@ -19,6 +23,7 @@ export class NodeWidget extends React.Component {
       this.setState({nodeVersion: this.state.nodeVersion + 1})
     }
     node.changed.add(this.onNodeChanged)
+    if (this.props.afterMount) { this.props.afterMount(this) }
   }
 
   getViewComponent ({node}) {
@@ -34,6 +39,7 @@ export class NodeWidget extends React.Component {
     if (this.onNodeChange) {
       node.changed.remove(this.onNodeChanged)
     }
+    if (this.props.beforeUnmount) { this.props.beforeUnmount(this) }
   }
 
   render () {
@@ -117,6 +123,9 @@ export class NodeWidget extends React.Component {
                 key={port.id}
                 style={{width: '100%'}}
                 port={port}
+                ref={(el) => {
+                  this.portWidgets[ioType][port.id] = el
+                }}
               />
             )
           })
@@ -138,6 +147,10 @@ export class NodeWidget extends React.Component {
 
   renderDebug () {
     return (<pre>{this.props.node.toString()}</pre>)
+  }
+
+  getPortWidget ({ioType, portId}) {
+    return this.portWidgets[ioType][portId]
   }
 }
 

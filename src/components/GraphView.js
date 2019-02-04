@@ -5,21 +5,17 @@ import { getPagePos } from '../utils/index.js'
 
 import DragContainer from './DragContainer.js'
 import { DraggableNodeWidget } from './NodeWidget.js'
-// import Wire from './Wire.js'
+import WireWidget from './WireWidget.js'
 
-class Wire extends React.Component {
-  render () { return (<div>Wire</div>) }
-}
 
 class GraphView extends React.Component {
   constructor (props) {
     super(props)
-    this.nodeRefs = {}
-    this.wireRefs = {}
+    this.nodeWidgets = {}
+    this.wireWidgets = {}
     this._wiresFromNode = {}
     this._wiresToNode = {}
     this.wiresContainerRef = React.createRef()
-    this.wireAvatarRef = React.createRef()
   }
 
   render () {
@@ -41,7 +37,7 @@ class GraphView extends React.Component {
           }}
         >
           {this.renderNodeWidgets({nodes})}
-          {this.renderWires({wires})}
+          {this.renderWireWidgets({wires})}
         </div>
       </div>
     )
@@ -52,30 +48,34 @@ class GraphView extends React.Component {
       <DragContainer
         className='nodes-container'
         style={{position: 'absolute'}}
+        onDragEnd={() => this.updateWireWidgets()}
       >
         {
           _.filter(nodes, (node) => !node.hidden).map((node) => {
-            return this.renderNodeWidget(node)
+            return this.renderDraggableNodeWidget(node)
           })
         }
       </DragContainer>
     )
   }
 
-  renderNodeWidget (node) {
+  renderDraggableNodeWidget (node) {
     return (
       <DraggableNodeWidget
         showDebug={false}
         key={node.id}
         node={node}
         pos={node.state.pos}
-        afterMount={(el) => { this.nodeRefs[node.id] = el }}
-        beforeUnmount={() => { delete this.nodeRefs[node.id] }}
+        ref={(el) => {
+          this.nodeWidgets[node.id] = el
+        }}
+        afterMount={(el) => { this.nodeWidgets[node.id] = el }}
+        beforeUnmount={() => { delete this.nodeWidgets[node.id] }}
       />
     )
   }
 
-  renderWires ({wires}) {
+  renderWireWidgets ({wires}) {
     return (
       <div
         className='wires-container'
@@ -98,13 +98,9 @@ class GraphView extends React.Component {
             overflow: 'visible'
           }}
         >
-          <Wire
-            ref={this.wireAvatarRef}
-            style={{stroke: 'orange'}}
-          />
           {
             _.map(wires, (wire, key) => {
-              return this.renderWire({wire, key})
+              return this.renderWireWidget({wire, key})
             })
           }
         </svg>
@@ -112,18 +108,52 @@ class GraphView extends React.Component {
     )
   }
 
-  renderWire ({wire, key}) {
+  renderWireWidget ({wire, key}) {
     return (
-      <Wire
+      <WireWidget
         key={key}
-        afterMount={(el) => { this.wireRefs[key] = el }}
-        beforeUnmount={() => { delete this.wireRefs[key] }}
+        wire={wire}
+        ref={(el) => {
+          this.wireWidgets[key] = el
+        }}
       />
     )
   }
 
+  componentDidMount () {
+    this.updateWireWidgets()
+  }
+
   componentWillUnmount () {
     this.props.graph.unmount()
+  }
+
+  componentDidUpdate () {
+    this.updateWireWidgets()
+  }
+
+  updateWireWidgets () {
+    for (let wireWidget of Object.values(this.wireWidgets)) {
+      this.updateWireWidgetPos({wireWidget})
+    }
+  }
+
+  updateWireWidgetPos ({wireWidget}) {
+    const wire = wireWidget.getWire()
+    const srcNodeWidget = this.nodeWidgets[wire.src.nodeId]
+    const srcPortWidget = srcNodeWidget.getPortWidget({
+      ioType: 'outputs',
+      portId: wire.src.portId
+    })
+    const destNodeWidget = this.nodeWidgets[wire.dest.nodeId]
+    const destPortWidget = destNodeWidget.getPortWidget({
+      ioType: 'inputs',
+      portId: wire.dest.portId,
+    })
+    wireWidget.setPositions({
+      src: getPagePos(srcPortWidget.getHandleEl()),
+      dest: getPagePos(destPortWidget.getHandleEl()),
+    })
   }
 }
 

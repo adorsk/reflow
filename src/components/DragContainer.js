@@ -203,6 +203,7 @@ class DragContainer extends React.Component {
         })
         this.setChildPos({key, pos: nextPos})
         this._dragMgr.reset()
+        this.onDragEnd()
       },
       onmove: (event) => {
         this._dragMgr.avatar.incrementPos({x: event.dx, y: event.dy})
@@ -221,6 +222,12 @@ class DragContainer extends React.Component {
         [key]: pos
       }
     })
+  }
+
+  onDragEnd () {
+    if (this.props.onDragEnd) {
+      this.props.onDragEnd()
+    }
   }
 }
 

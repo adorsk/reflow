@@ -58,6 +58,42 @@ const graphFactory = ({store} = {}) => {
       },
     }
   }))
+
+  graph.addNode(Node.fromSpec({
+    id: 'sink',
+    tickFn: (({node}) => {
+      const inPort = node.getPort('inputs:in')
+      if (inPort.hasHotValues()) {
+        node.state.set('last', inPort.popValue())
+      }
+    }),
+    ports: {
+      inputs: {
+        'in': {}
+      }
+    },
+    ctx: {
+      getViewComponent: ({node}) => {
+        class ViewComponent extends React.Component {
+          render () {
+            const { node } = this.props
+            return (
+              <div>
+                last: {node.state.get('last')}
+              </div>
+            )
+          }
+        }
+        return ViewComponent
+      },
+    }
+  }))
+
+  graph.addWire({
+    src: { nodeId: 'counter', portId: 'out', },
+    dest: { nodeId: 'sink', portId: 'in'},
+  })
+
   return graph
 }
 
