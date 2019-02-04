@@ -19,7 +19,7 @@ const graphFactory = ({store} = {}) => {
       node.state.set('sleeping', true)
       setTimeout(() => {
         node.state.set('counter',  node.state.get('counter') + 1)
-        console.log('emitto', node.state.get('counter'))
+        console.log('charf', node.state.get('counter'))
         node.getPort('outputs:out').pushValues([node.state.get('counter')])
         node.state.set('sleeping', false)
       }, 1000)

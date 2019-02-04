@@ -36,6 +36,7 @@ export class Node {
   setState (state) {
     if (this[DISPOSER_KEY]) { this[DISPOSER_KEY]() } // unbind prev state
     state = (state.observe) ? state : observable.map(state)
+    const date = new Date()
     this[DISPOSER_KEY] = state.observe(this.changed.dispatch)
     this.state = state
   }
@@ -133,7 +134,12 @@ export class Node {
   }
 
   unmount () {
+    for (let port of this.getPorts()) {
+      port.unmount()
+    }
     this.unmountTickFn()
+    if (this[DISPOSER_KEY]) { this[DISPOSER_KEY]() } 
+    this.changed.removeAll()
   }
 
   toString () {

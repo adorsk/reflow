@@ -110,6 +110,7 @@ export class Graph {
     _.each(this.nodes, (node, id) => {
       this.removeNode({nodeId: id})
     })
+    this.changed.removeAll()
   }
 
   toString () {

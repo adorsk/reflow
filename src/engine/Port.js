@@ -71,6 +71,10 @@ class Port {
   hasHotValues () {
     return (this.hotValues.length > 0)
   }
+
+  unmount () {
+    this.changed.removeAll()
+  }
 }
 
 export default Port
