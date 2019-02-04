@@ -60,6 +60,15 @@ class Port {
     return value
   }
 
+  popValue (opts = {}) {
+    opts = {noSignals: false, ...opts}
+    const value = this.values.pop()
+    if (!opts.noSignals) {
+      this.changed.dispatch({type: 'pop'})
+    }
+    return value
+  }
+
   quenchHotValues () {
     this.hotValues = []
   }
