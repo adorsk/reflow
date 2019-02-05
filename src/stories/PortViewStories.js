@@ -1,10 +1,10 @@
 import React from 'react'
 import { storiesOf } from '@storybook/react'
 
-import { PortWidget } from '../components/PortWidget.js'
+import { PortView } from '../components/PortView.js'
 import Port from '../engine/Port.js'
 
-storiesOf('PortWidget', module)
+storiesOf('PortView', module)
   .add('inputs', () => {
     const ioType = 'inputs'
     const ports = [
@@ -28,7 +28,7 @@ storiesOf('PortWidget', module)
             port.renderView = ({port}) => {
               return (<div>view for {port.id}</div>)
             }
-            return (<PortWidget port={port} />)
+            return (<PortView port={port} />)
           })
         }
       </div>

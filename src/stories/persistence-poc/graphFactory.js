@@ -30,8 +30,8 @@ const graphFactory = ({store} = {}) => {
       }
     },
     ctx: {
-      getViewComponent: ({node}) => {
-        class ViewComponent extends React.Component {
+      getGuiComponent: ({node}) => {
+        class GuiComponent extends React.Component {
           render () {
             const { node } = this.props
             return (
@@ -54,7 +54,7 @@ const graphFactory = ({store} = {}) => {
             )
           }
         }
-        return ViewComponent
+        return GuiComponent
       },
     }
   }))
@@ -73,8 +73,8 @@ const graphFactory = ({store} = {}) => {
       }
     },
     ctx: {
-      getViewComponent: ({node}) => {
-        class ViewComponent extends React.Component {
+      getGuiComponent: ({node}) => {
+        class GuiComponent extends React.Component {
           render () {
             const { node } = this.props
             return (
@@ -84,7 +84,7 @@ const graphFactory = ({store} = {}) => {
             )
           }
         }
-        return ViewComponent
+        return GuiComponent
       },
     }
   }))

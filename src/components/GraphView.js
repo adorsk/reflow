@@ -2,16 +2,16 @@ import React from 'react'
 import _ from 'lodash'
 
 import DragContainer from './DragContainer.js'
-import { DraggableNodeWidget } from './NodeWidget.js'
-import WireWidget from './WireWidget.js'
+import { DraggableNodeView } from './NodeView.js'
+import WireView from './WireView.js'
 import ObservableMapStore from '../engine/ObservableMapStore.js'
 
 
 class GraphView extends React.Component {
   constructor (props) {
     super(props)
-    this.nodeWidgets = {}
-    this.wireWidgets = {}
+    this.nodeViews = {}
+    this.wireViews = {}
     this._wiresFromNode = {}
     this._wiresToNode = {}
     this.wiresContainerRef = React.createRef()
@@ -35,34 +35,34 @@ class GraphView extends React.Component {
             width: '100%',
           }}
         >
-          {this.renderNodeWidgets({nodes})}
-          {this.renderWireWidgets({wires})}
+          {this.renderNodeViews({nodes})}
+          {this.renderWireViews({wires})}
         </div>
       </div>
     )
   }
 
-  renderNodeWidgets ({nodes}) {
+  renderNodeViews ({nodes}) {
     return (
       <DragContainer
         className='nodes-container'
         style={{position: 'absolute', zIndex: 10}}
-        onDragEnd={() => this.updateWireWidgets()}
+        onDragEnd={() => this.updateWireViews()}
       >
         {
           _.filter(nodes, (node) => !node.hidden).map((node) => {
-            return this.renderDraggableNodeWidget(node)
+            return this.renderDraggableNodeView(node)
           })
         }
       </DragContainer>
     )
   }
 
-  renderDraggableNodeWidget (node) {
+  renderDraggableNodeView (node) {
     const { store } = this.props
     const posKey = `${node.id}-pos`
     return (
-      <DraggableNodeWidget
+      <DraggableNodeView
         showDebug={false}
         key={node.id}
         node={node}
@@ -70,9 +70,9 @@ class GraphView extends React.Component {
           key: posKey,
           factoryFn: () => ({x: 0, y:0}),
         })}
-        ref={(el) => { this.nodeWidgets[node.id] = el }}
-        afterMount={(el) => { this.nodeWidgets[node.id] = el }}
-        beforeUnmount={() => { delete this.nodeWidgets[node.id] }}
+        ref={(el) => { this.nodeViews[node.id] = el }}
+        afterMount={(el) => { this.nodeViews[node.id] = el }}
+        beforeUnmount={() => { delete this.nodeViews[node.id] }}
         onDragEnd={({pos}) => {
           store.set({key: posKey, value: pos})
         }}
@@ -80,7 +80,7 @@ class GraphView extends React.Component {
     )
   }
 
-  renderWireWidgets ({wires}) {
+  renderWireViews ({wires}) {
     return (
       <div
         className='wires-container'
@@ -105,7 +105,7 @@ class GraphView extends React.Component {
         >
           {
             _.map(wires, (wire, key) => {
-              return this.renderWireWidget({wire, key})
+              return this.renderWireView({wire, key})
             })
           }
         </svg>
@@ -113,20 +113,20 @@ class GraphView extends React.Component {
     )
   }
 
-  renderWireWidget ({wire, key}) {
+  renderWireView ({wire, key}) {
     return (
-      <WireWidget
+      <WireView
         key={key}
         wire={wire}
         ref={(el) => {
-          this.wireWidgets[key] = el
+          this.wireViews[key] = el
         }}
       />
     )
   }
 
   componentDidMount () {
-    this.updateWireWidgets()
+    this.updateWireViews()
   }
 
   componentWillUnmount () {
@@ -134,30 +134,30 @@ class GraphView extends React.Component {
   }
 
   componentDidUpdate () {
-    this.updateWireWidgets()
+    this.updateWireViews()
   }
 
-  updateWireWidgets () {
-    for (let wireWidget of Object.values(this.wireWidgets)) {
-      this.updateWireWidgetPos({wireWidget})
+  updateWireViews () {
+    for (let wireView of Object.values(this.wireViews)) {
+      this.updateWireViewPos({wireView})
     }
   }
 
-  updateWireWidgetPos ({wireWidget}) {
-    const wire = wireWidget.getWire()
-    const srcNodeWidget = this.nodeWidgets[wire.src.nodeId]
-    const srcPortWidget = srcNodeWidget.getPortWidget({
+  updateWireViewPos ({wireView}) {
+    const wire = wireView.getWire()
+    const srcNodeView = this.nodeViews[wire.src.nodeId]
+    const srcPortView = srcNodeView.getPortView({
       ioType: 'outputs',
       portId: wire.src.portId
     })
-    const destNodeWidget = this.nodeWidgets[wire.dest.nodeId]
-    const destPortWidget = destNodeWidget.getPortWidget({
+    const destNodeView = this.nodeViews[wire.dest.nodeId]
+    const destPortView = destNodeView.getPortView({
       ioType: 'inputs',
       portId: wire.dest.portId,
     })
-    wireWidget.setPositions({
-      src: srcPortWidget.getHandlePagePos(),
-      dest: destPortWidget.getHandlePagePos(),
+    wireView.setPositions({
+      src: srcPortView.getHandlePagePos(),
+      dest: destPortView.getHandlePagePos(),
     })
   }
 }

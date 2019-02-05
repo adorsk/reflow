@@ -1,6 +1,6 @@
 import DragContainerStories from './DragContainerStories.js'
 import GraphViewStories from './GraphViewStories.js'
-import NodeWidgetStories from './NodeWidgetStories.js'
-import PortWidgetStories from './PortWidgetStories.js'
+import NodeViewStories from './NodeViewStories.js'
+import PortViewStories from './PortViewStories.js'
 import './hmr-poc/stories.js'
 import './persistence-poc/stories.js'

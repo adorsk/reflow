@@ -2,7 +2,7 @@ import React from 'react'
 
 const BEZIER_OFFSET = 50
 
-class WireWidget extends React.Component {
+class WireView extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
@@ -63,4 +63,4 @@ class WireWidget extends React.Component {
   }
 }
 
-export default WireWidget
+export default WireView

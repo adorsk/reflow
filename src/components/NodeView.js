@@ -1,16 +1,16 @@
 import React from 'react'
 import _ from 'lodash'
 
-import PortWidget from './PortWidget.js'
+import PortView from './PortView.js'
 
 const nop = () => null
 
-export class NodeWidget extends React.Component {
+export class NodeView extends React.Component {
   constructor (props) {
     super(props)
     this.state = { nodeVersion: 0 }
-    this.ViewComponent = this.getViewComponent({node: props.node})
-    this.portWidgets = {
+    this.GuiComponent = this.getGuiComponent({node: props.node})
+    this.portViews = {
       inputs: {},
       outputs: {},
     }
@@ -26,9 +26,9 @@ export class NodeWidget extends React.Component {
     if (this.props.afterMount) { this.props.afterMount(this) }
   }
 
-  getViewComponent ({node}) {
-    if (node.ctx && node.ctx.getViewComponent) {
-      return node.ctx.getViewComponent({node})
+  getGuiComponent ({node}) {
+    if (node.ctx && node.ctx.getGuiComponent) {
+      return node.ctx.getGuiComponent({node})
     }
     return null
   }
@@ -119,12 +119,12 @@ export class NodeWidget extends React.Component {
         {
           _.map(ports, (port) => {
             return (
-              <PortWidget
+              <PortView
                 key={port.id}
                 style={{width: '100%'}}
                 port={port}
                 ref={(el) => {
-                  this.portWidgets[ioType][port.id] = el
+                  this.portViews[ioType][port.id] = el
                 }}
               />
             )
@@ -136,11 +136,11 @@ export class NodeWidget extends React.Component {
 
   renderView () {
     const { node } = this.props
-    if (!this.ViewComponent) { return }
-    const ViewComponent = this.ViewComponent
+    if (!this.GuiComponent) { return }
+    const GuiComponent = this.GuiComponent
     return (
       <div className="view">
-        <ViewComponent node={node} />
+        <GuiComponent node={node} />
       </div>
     )
   }
@@ -149,20 +149,20 @@ export class NodeWidget extends React.Component {
     return (<pre>{this.props.node.toString()}</pre>)
   }
 
-  getPortWidget ({ioType, portId}) {
-    return this.portWidgets[ioType][portId]
+  getPortView ({ioType, portId}) {
+    return this.portViews[ioType][portId]
   }
 }
 
-export class DraggableNodeWidget extends React.Component {
+export class DraggableNodeView extends React.Component {
   render () {
     const decoratedProps = {
       ...this.props,
       labelRef: this.props.dragHandleRef,
       rootRef: this.props.dragContainerRef,
     }
-    return (<NodeWidget {...decoratedProps} />)
+    return (<NodeView {...decoratedProps} />)
   }
 }
 
-export default NodeWidget
+export default NodeView

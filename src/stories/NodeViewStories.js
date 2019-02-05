@@ -1,11 +1,11 @@
 import React from 'react'
 import { storiesOf } from '@storybook/react'
 
-import { NodeWidget, DraggableNodeWidget } from '../components/NodeWidget.js'
+import { NodeView, DraggableNodeView } from '../components/NodeView.js'
 import Node from '../engine/Node.js'
 import DragContainer from '../components/DragContainer.js'
 
-storiesOf('NodeWidget', module)
+storiesOf('NodeView', module)
   .add('default', () => {
     const node = Node.fromSpec({
       id: 'a',
@@ -17,7 +17,7 @@ storiesOf('NodeWidget', module)
     })
     return (
       <div>
-        <NodeWidget
+        <NodeView
           node={node}
           getTickFnCode={'return ({node}) => console.log("tikko", node)'}
         />
@@ -40,7 +40,7 @@ storiesOf('NodeWidget', module)
     })
     return (
       <DragContainer>
-        <DraggableNodeWidget
+        <DraggableNodeView
           pos={{x: 100, y: 50}}
           node={node}
         />

@@ -5,7 +5,7 @@ import { Popup } from 'semantic-ui-react'
 import { getPagePos } from '../utils/index.js'
 
 
-export class PortWidget extends React.Component {
+export class PortView extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
@@ -119,4 +119,4 @@ export class PortWidget extends React.Component {
   }
 }
 
-export default PortWidget
+export default PortView
