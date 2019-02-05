@@ -43,7 +43,7 @@ const graphFactory = ({store} = {}) => {
                     type="checkbox"
                     checked={!!node.state.get('active')}
                     onChange={(evt) => {
-                      node.state.set('active', event.target.checked)
+                      node.state.set('active', evt.target.checked)
                     }}
                   />
                 </label>

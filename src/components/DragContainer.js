@@ -167,6 +167,7 @@ class DragContainer extends React.Component {
           interact(this.childItems[key].current).unset()
           delete this.childItems[key]
         }}
+        onDragEnd={child && child.props.onDragEnd}
       >
         {child}
       </DraggableItem>
@@ -203,7 +204,7 @@ class DragContainer extends React.Component {
         })
         this.setChildPos({key, pos: nextPos})
         this._dragMgr.reset()
-        this.onDragEnd()
+        this.onDragEnd({draggableItem, key, pos: nextPos})
       },
       onmove: (event) => {
         this._dragMgr.avatar.incrementPos({x: event.dx, y: event.dy})
@@ -224,9 +225,12 @@ class DragContainer extends React.Component {
     })
   }
 
-  onDragEnd () {
+  onDragEnd ({draggableItem, key, pos}) {
+    if (draggableItem.props.onDragEnd) {
+      draggableItem.props.onDragEnd({pos})
+    }
     if (this.props.onDragEnd) {
-      this.props.onDragEnd()
+      this.props.onDragEnd({pos})
     }
   }
 }

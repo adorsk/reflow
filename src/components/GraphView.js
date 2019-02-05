@@ -4,6 +4,7 @@ import _ from 'lodash'
 import DragContainer from './DragContainer.js'
 import { DraggableNodeWidget } from './NodeWidget.js'
 import WireWidget from './WireWidget.js'
+import ObservableMapStore from '../engine/ObservableMapStore.js'
 
 
 class GraphView extends React.Component {
@@ -58,17 +59,23 @@ class GraphView extends React.Component {
   }
 
   renderDraggableNodeWidget (node) {
+    const { store } = this.props
+    const posKey = `${node.id}-pos`
     return (
       <DraggableNodeWidget
         showDebug={false}
         key={node.id}
         node={node}
-        pos={node.state.pos}
-        ref={(el) => {
-          this.nodeWidgets[node.id] = el
-        }}
+        pos={store.getOrCreate({
+          key: posKey,
+          factoryFn: () => ({x: 0, y:0}),
+        })}
+        ref={(el) => { this.nodeWidgets[node.id] = el }}
         afterMount={(el) => { this.nodeWidgets[node.id] = el }}
         beforeUnmount={() => { delete this.nodeWidgets[node.id] }}
+        onDragEnd={({pos}) => {
+          store.set({key: posKey, value: pos})
+        }}
       />
     )
   }
