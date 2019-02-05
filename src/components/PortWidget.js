@@ -1,7 +1,8 @@
 import React from 'react'
-
 import 'semantic-ui-css/semantic.min.css'
 import { Popup } from 'semantic-ui-react'
+
+import { getPagePos } from '../utils/index.js'
 
 
 export class PortWidget extends React.Component {
@@ -82,7 +83,6 @@ export class PortWidget extends React.Component {
     return (
       <span
         key="handle"
-        ref={this.handleRef}
         data-portid={port.id}
         data-nodeid={port.node && port.node.id}
         className='port-handle'
@@ -94,7 +94,7 @@ export class PortWidget extends React.Component {
           color: 'hsl(0, 0%, 30%)',
         }}
       >
-        {symbol}
+        <span ref={this.handleRef}>{symbol}</span>
       </span>
     )
   }
@@ -108,6 +108,15 @@ export class PortWidget extends React.Component {
   }
 
   getHandleEl () { return this.handleRef.current }
+
+  getHandlePagePos () {
+    const handleEl = this.getHandleEl()
+    let pagePos = getPagePos(handleEl)
+    const bBox = handleEl.getBoundingClientRect()
+    pagePos.y += bBox.height / 2
+    pagePos.x += bBox.width / 2
+    return pagePos
+  }
 }
 
 export default PortWidget

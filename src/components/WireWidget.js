@@ -55,7 +55,6 @@ class WireWidget extends React.Component {
   }
 
   setPositions ({src, dest}) {
-    console.log("s: ", src, "d2: ", dest)
     this.setState({srcPosition: src, destPosition: dest})
   }
 

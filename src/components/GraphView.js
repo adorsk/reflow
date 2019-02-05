@@ -1,8 +1,6 @@
 import React from 'react'
 import _ from 'lodash'
 
-import { getPagePos } from '../utils/index.js'
-
 import DragContainer from './DragContainer.js'
 import { DraggableNodeWidget } from './NodeWidget.js'
 import WireWidget from './WireWidget.js'
@@ -47,7 +45,7 @@ class GraphView extends React.Component {
     return (
       <DragContainer
         className='nodes-container'
-        style={{position: 'absolute'}}
+        style={{position: 'absolute', zIndex: 10}}
         onDragEnd={() => this.updateWireWidgets()}
       >
         {
@@ -151,8 +149,8 @@ class GraphView extends React.Component {
       portId: wire.dest.portId,
     })
     wireWidget.setPositions({
-      src: getPagePos(srcPortWidget.getHandleEl()),
-      dest: getPagePos(destPortWidget.getHandleEl()),
+      src: srcPortWidget.getHandlePagePos(),
+      dest: destPortWidget.getHandlePagePos(),
     })
   }
 }
