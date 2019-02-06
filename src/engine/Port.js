@@ -1,4 +1,3 @@
-import _ from 'lodash'
 import { observable } from 'mobx'
 import signals from 'signals'
 
@@ -12,10 +11,11 @@ class Port {
 
   constructor (opts = {}) {
     this.id = opts.id
+    this.ctx = opts.ctx
     this.changed = new signals.Signal()
     this.setNode(opts.node)
     this.setState(opts.state || new Map())
-    this.setValues(opts.values || new Array())
+    this.setValues(opts.values || [])
     this.hotValues = []
     this.ioType = opts.ioType
   }

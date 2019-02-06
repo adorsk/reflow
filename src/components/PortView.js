@@ -1,6 +1,7 @@
 import React from 'react'
+import _ from 'lodash'
 import 'semantic-ui-css/semantic.min.css'
-import { Popup } from 'semantic-ui-react'
+import { Label, Popup } from 'semantic-ui-react'
 
 import { getPagePos } from '../utils/index.js'
 
@@ -9,10 +10,15 @@ export class PortView extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
-      showPopup: true,
+      popupIsOpen: false,
+      portVersion: 0,
     }
     this.handleRef = React.createRef()
     this.labelRef = React.createRef()
+    const port = props.port
+    if (port && port.ctx && port.ctx.getGuiComponent) {
+      this.GuiComponent = port.ctx.getGuiComponent({port})
+    }
   }
 
   render () {
@@ -32,17 +38,17 @@ export class PortView extends React.Component {
   }
 
   renderLabel ({port}) {
-    let labelText = (<span>{port.label || port.id}</span>)
-    if (port.renderView) {
-      labelText = (
-        <Popup
-          trigger={labelText}
-          content={this.renderView({port})}
-          on='click'
-          position='left center'
-        />
-      )
-    }
+    const trigger = (
+      <Label
+        as="a"
+        onClick={() => {
+          this.setState({popupIsVisible: !this.state.popupIsVisible})
+        }}
+      >
+        {port.label || port.id}
+      </Label>
+    )
+    const leftRight = (port.ioType === 'inputs') ? 'left' : 'right'
     return (
       <span
         key="label"
@@ -53,14 +59,39 @@ export class PortView extends React.Component {
           width: '100%',
         }}
       >
-        {labelText}
+        <Popup
+          trigger={trigger}
+          content={this.renderPopupContent({port})}
+          on={null}
+          open={this.state.popupIsVisible}
+          position={`${leftRight} center`}
+        />
       </span>
     )
   }
 
-  renderView ({port}) {
-    console.log('yo')
-    return port.renderView({port})
+  renderPopupContent ({port}) {
+    return (
+      <div>
+        {this.renderPortGui({port})}
+        <div>
+          values
+          <ul>
+            {
+              port.values.map((value) => {
+                return (<li>{value}</li>)
+              })
+            }
+          </ul>
+        </div>
+      </div>
+    )
+  }
+
+  renderPortGui ({port}) {
+    const GuiComponent = this.GuiComponent
+    if (!GuiComponent) { return null }
+    return (<GuiComponent port={port} />)
   }
 
   renderHandle ({port}) {
@@ -101,10 +132,19 @@ export class PortView extends React.Component {
 
   componentDidMount () {
     if (this.props.afterMount) { this.props.afterMount(this) }
+    const { port } = this.props
+    const onPortChange = _.debounce(() => {
+      this.setState({portVersion: this.state.portVersion + 1})
+    }, 0)
+    port.changed.add(onPortChange)
+    this.portObserverDisposer = () => {
+      port.changed.remove(onPortChange)
+    }
   }
 
   componentWillUnmount () {
     if (this.props.beforeUnmount) { this.props.beforeUnmount(this) }
+    this.portObserverDisposer()
   }
 
   getHandleEl () { return this.handleRef.current }

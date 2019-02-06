@@ -94,6 +94,76 @@ const graphFactory = ({store} = {}) => {
     dest: { nodeId: 'sink', portId: 'in'},
   })
 
+  graph.addNode(Node.fromSpec({
+    id: 'textInput',
+    tickFn: (({node}) => {
+      const inPort = node.getPort('inputs:in')
+      if (inPort.hasHotValues()) {
+        node.getPort('outputs:out').pushValues([inPort.getMostRecentValue()])
+      }
+    }),
+    ports: {
+      inputs: {
+        'in': {
+          ctx: {
+            getGuiComponent: ({port}) => {
+              class GuiComponent extends React.Component {
+                render () {
+                  const { port } = this.props
+                  return (
+                    <input
+                      onBlur={(evt) => {
+                        port.pushValues([evt.target.value])
+                      }}
+                    />
+                  )
+                }
+              }
+              return GuiComponent
+            },
+          }
+        },
+      },
+      outputs: {
+        'out': {}
+      }
+    },
+  }))
+
+  graph.addNode(Node.fromSpec({
+    id: 'textSink',
+    tickFn: (({node}) => {
+      const inPort = node.getPort('inputs:in')
+      if (inPort.hasHotValues()) {
+        node.state.set('last', inPort.popValue())
+      }
+    }),
+    ports: {
+      inputs: {
+        'in': {}
+      }
+    },
+    ctx: {
+      getGuiComponent: ({node}) => {
+        class GuiComponent extends React.Component {
+          render () {
+            const { node } = this.props
+            return (
+              <div>
+                last: {node.state.get('last')}
+              </div>
+            )
+          }
+        }
+        return GuiComponent
+      },
+    }
+  }))
+  graph.addWire({
+    src: { nodeId: 'textInput', portId: 'out', },
+    dest: { nodeId: 'textSink', portId: 'in'},
+  })
+
   return graph
 }
 

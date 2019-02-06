@@ -36,7 +36,6 @@ export class Node {
   setState (state) {
     if (this[DISPOSER_KEY]) { this[DISPOSER_KEY]() } // unbind prev state
     state = (state.observe) ? state : observable.map(state)
-    const date = new Date()
     this[DISPOSER_KEY] = state.observe(this.changed.dispatch)
     this.state = state
   }
@@ -44,13 +43,11 @@ export class Node {
   addPort ({port, ioType}) {
     port.setNode(this)
     this.ports[ioType][port.id] = port
-    if (ioType === 'inputs') {
-      port.changed.add((evt) => {
-        if (evt.type === 'push') {
-          this.changed.dispatch({type: 'inputs'})
-        }
-      })
-    }
+    port.changed.add((evt) => {
+      if (evt.type === 'push') {
+        this.changed.dispatch({type: ioType})
+      }
+    })
   }
 
   tick() {
