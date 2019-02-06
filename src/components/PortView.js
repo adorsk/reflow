@@ -79,7 +79,7 @@ export class PortView extends React.Component {
           <ul>
             {
               port.values.map((value) => {
-                return (<li>{value}</li>)
+                return (<li key={_.uniqueId()}>{'' + value}</li>)
               })
             }
           </ul>

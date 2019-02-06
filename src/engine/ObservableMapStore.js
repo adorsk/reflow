@@ -2,7 +2,7 @@ import { observable } from 'mobx'
 
 export class ObservableMapStore {
   constructor (opts) {
-    this.store = observable.map()
+    this.store = observable.map({}, {deep: false})
   }
 
   getOrCreate ({key, factoryFn} = {}) {

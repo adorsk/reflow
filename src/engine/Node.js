@@ -92,6 +92,9 @@ export class Node {
   }
 
   getInputPorts () { return this.ports['inputs'] }
+
+  get inputPorts () { return this.getInputPorts() }
+
   getOutputPorts () { return this.ports['outputs'] }
 
   hasHotInputs () {

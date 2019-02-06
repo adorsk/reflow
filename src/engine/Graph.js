@@ -68,8 +68,20 @@ export class Graph {
     this.nodes[node.id] = node
     node.setState(this.store.getOrCreate({key: node.id}))
     for (let port of node.getPorts()) {
-      const key = [node.id, port.id].join(':')
-      port.setState(this.store.getOrCreate({key}))
+      const portKey = [node.id, port.id].join(':')
+      port.setState(this.store.getOrCreate({key: portKey + '-state'}))
+      port.setValues(this.store.getOrCreate({
+        key: portKey + '-values',
+        factoryFn: () => [],
+      }))
+      // @TODO: Yuck. State is getting messy here, may
+      // want to move this to Node.fromSpec .
+      if (! port.state.get('initialized')) {
+        if (port.initialValues) {
+          port.pushValues(port.initialValues)
+        }
+        port.state.set('initialized', true)
+      }
     }
     node.changed.add(this.changed.dispatch)
     if (!opts.noSignals) {

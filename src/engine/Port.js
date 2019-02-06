@@ -11,6 +11,7 @@ class Port {
   constructor (opts = {}) {
     this.id = opts.id
     this.ctx = opts.ctx
+    this.initialValues = opts.initialValues || []
     this.changed = new signals.Signal()
     this.setNode(opts.node)
     this.setState(opts.state || new Map())
