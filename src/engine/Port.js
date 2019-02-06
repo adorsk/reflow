@@ -4,7 +4,6 @@ import signals from 'signals'
 
 const DISPOSER_KEYS = {
   state: Symbol('state_disposer_key'),
-  values: Symbol('values_disposer_key'),
 }
 
 class Port {
@@ -33,10 +32,6 @@ class Port {
   }
 
   setValues (values) {
-    // unbind prev values
-    if (this[DISPOSER_KEYS.values]) { this[DISPOSER_KEYS.values]() }
-    values = (values.observe) ? values : observable(values)
-    this[DISPOSER_KEYS.values] = values.observe(this.changed.dispatch)
     this.values = values
   }
 
@@ -75,6 +70,10 @@ class Port {
 
   getMostRecentValue () {
     return this.values[this.values.length - 1]
+  }
+
+  get mostRecentValue () {
+    return this.getMostRecentValue()
   }
 
   hasHotValues () {
