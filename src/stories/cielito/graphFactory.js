@@ -17,6 +17,19 @@ const NumberInput = (props) => {
   )
 }
 
+const ColorInput = (props) => {
+  const { port } = props
+  return (
+    <input type="color" onBlur={(evt) => {
+      let value
+      try { 
+        value = evt.target.value
+      } catch (err) {}
+      port.pushValues([value])
+    }} />
+  )
+}
+
 class InputsError extends Error {}
 
 const getInputValues = ({node, inputKeys}) => {
@@ -95,6 +108,10 @@ const graphFactory = ({store} = {}) => {
     ports: {
       'inputs': {
         points: {},
+        fillStyle: {
+          initialValues: ['blue'],
+          ctx: { getGuiComponent: () => ColorInput }
+        },
       },
       'outputs': {
         shapes: {},
@@ -102,7 +119,10 @@ const graphFactory = ({store} = {}) => {
     },
     tickFn ({node}) {
       if (!node.hasHotInputs()) { return }
-      const inputValues = getInputValues({node, inputKeys: ['points']})
+      const inputValues = getInputValues({
+        node,
+        inputKeys: ['points', 'fillStyle']
+      })
       const shapes = inputValues.points.map((point) => {
         const shape = {
           x: point.x,
@@ -113,6 +133,7 @@ const graphFactory = ({store} = {}) => {
             ['l', 5, -5],
             ['z'],
           ].map((cmd) => cmd.join(' ')).join(' ')),
+          fillStyle: inputValues.fillStyle,
         }
         return shape
       })
@@ -150,7 +171,7 @@ const graphFactory = ({store} = {}) => {
       const ctx = canvas.getContext('2d')
       for (let shape of shapes) {
         const shapePath = new Path2D(shape.d)
-        ctx.fillStyle = 'blue'
+        ctx.fillStyle = shape.fillStyle
         ctx.fill(shapePath)
       }
       node.getPort('outputs:canvas').pushValues([canvas])
