@@ -86,10 +86,13 @@ const graphFactory = ({store} = {}) => {
     },
     tickFn ({node}) {
       if (! node.hasHotInputs()) { return }
-      const inputValues = getInputValues({
-        node,
-        inputKeys: Object.keys(node.getInputPorts())
-      })
+      let inputValues
+      try {
+        inputValues = getInputValues({
+          node,
+          inputKeys: Object.keys(node.getInputPorts())
+        })
+      } catch (err) { return }
       const points = []
       for (let x = inputValues.x0; x < inputValues.x1; x += inputValues.dx) {
         for (let y = inputValues.y0; y < inputValues.y1; y += inputValues.dy) {
@@ -119,10 +122,13 @@ const graphFactory = ({store} = {}) => {
     },
     tickFn ({node}) {
       if (!node.hasHotInputs()) { return }
-      const inputValues = getInputValues({
-        node,
-        inputKeys: ['points', 'fillStyle']
-      })
+      let inputValues
+      try { 
+        inputValues = getInputValues({
+          node,
+          inputKeys: ['points', 'fillStyle']
+        })
+      } catch (err) { return }
       const shapes = inputValues.points.map((point) => {
         const shape = {
           x: point.x,
