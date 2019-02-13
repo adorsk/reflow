@@ -1,8 +1,10 @@
 import React from 'react'
 import _ from 'lodash'
+import { ChromePicker } from 'react-color'
 
 import Graph from '../../engine/Graph.js'
 import Node from '../../engine/Node.js'
+
 
 const NumberInput = (props) => {
   const { port } = props
@@ -17,17 +19,18 @@ const NumberInput = (props) => {
   )
 }
 
-const ColorInput = (props) => {
-  const { port } = props
-  return (
-    <input type="color" onBlur={(evt) => {
-      let value
-      try { 
-        value = evt.target.value
-      } catch (err) {}
-      port.pushValues([value])
-    }} />
-  )
+class ColorInput extends React.Component {
+  state = { color: {h: 0, s: 0, l: 0} }
+  render () {
+    const { port } = this.props
+    return (
+      <ChromePicker
+        color={this.state.color}
+        onChange={(color) => this.setState({color})}
+        onChangeComplete={(color) => { port.pushValues([color.hex]) }}
+      />
+    )
+  }
 }
 
 class InputsError extends Error {}

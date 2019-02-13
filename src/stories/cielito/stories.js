@@ -23,7 +23,7 @@ class AwaitStoresPromise extends React.Component {
 }
 
 
-storiesOf('cielito', module)
-  .add('default', () => {
-    return (<AwaitStoresPromise />)
-  })
+const mod = storiesOf('cielito', module)
+mod.add('default', () => {
+  return (<AwaitStoresPromise />)
+})

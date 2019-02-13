@@ -7,13 +7,11 @@ async function getStoresPromise () {
   let initialViewStoreValues
   try { 
     const doc = await viewDb.get('viewStore')
-    console.log("d: ", doc)
     initialViewStoreValues = doc.values
   } catch (err) {
     console.log(err)
     initialViewStoreValues = {}
   }
-  console.log("ivsv: ", initialViewStoreValues)
   const viewStore = new ObservableMapStore({
     initialValues: initialViewStoreValues
   })
