@@ -46,6 +46,14 @@ export class PortView extends React.Component {
         }}
       >
         {port.label || port.id}
+        <span
+          style={{
+            textAlign: 'right',
+            paddingLeft: '.6em',
+          }}
+        >
+          {this.renderThumbValue({port})}
+        </span>
       </Label>
     )
     const leftRight = (port.ioType === 'inputs') ? 'left' : 'right'
@@ -65,6 +73,21 @@ export class PortView extends React.Component {
           on={null}
           open={this.state.popupIsVisible}
           position={`${leftRight} center`}
+          style={{
+            maxHeight: '300px',
+            overflow: 'auto',
+          }}
+          onMount={() => {
+            this.escFn = (evt) => {
+              if (evt.keyCode === 27) {
+                this.setState({popupIsVisible: false})
+              }
+            }
+            document.addEventListener("keydown", this.escFn)
+          }}
+          onUnmount={() => {
+            document.removeEventListener("keydown", this.escFn)
+          }}
         />
       </span>
     )
@@ -86,6 +109,13 @@ export class PortView extends React.Component {
         </div>
       </div>
     )
+  }
+
+  renderThumbValue ({port}) {
+    const mostRecentValue = port.getMostRecentValue()
+    if (typeof mostRecentValue !== 'undefined') {
+      return _.truncate('' + mostRecentValue, {length: 2})
+    }
   }
 
   renderPortGui ({port}) {
