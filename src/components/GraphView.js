@@ -22,17 +22,21 @@ class GraphView extends React.Component {
     if (! graph) { return null }
     const nodes = graph.getNodes()
     const wires = graph.getWires()
+    const style = {
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
+      ...this.props.style,
+    }
     return (
-      <div
-        className='graph'
-        style={this.props.style}
-      >
+      <div className='graph' style={style}>
         <div
           className='graph-content-container'
           style={{
             position: 'relative',
             height: '100%',
             width: '100%',
+            overflow: 'scroll',
           }}
         >
           {this.renderNodeViews({nodes})}

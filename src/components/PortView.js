@@ -46,14 +46,7 @@ export class PortView extends React.Component {
         }}
       >
         {port.label || port.id}
-        <span
-          style={{
-            textAlign: 'right',
-            paddingLeft: '.6em',
-          }}
-        >
-          {this.renderThumbValue({port})}
-        </span>
+        <Label.Detail>{this.renderValueDetail({port})}</Label.Detail>
       </Label>
     )
     const leftRight = (port.ioType === 'inputs') ? 'left' : 'right'
@@ -111,11 +104,17 @@ export class PortView extends React.Component {
     )
   }
 
-  renderThumbValue ({port}) {
-    const mostRecentValue = port.getMostRecentValue()
-    if (typeof mostRecentValue !== 'undefined') {
-      return _.truncate('' + mostRecentValue, {length: 2})
+  renderValueDetail ({port}) {
+    if (port.ctx && port.ctx.renderValueDetail) {
+      return port.ctx.renderValueDetail({port})
     }
+    return this.defaultRenderValueDetail({port})
+  }
+
+  defaultRenderValueDetail ({port}) {
+    const mostRecentValue = port.getMostRecentValue()
+    if (_.isUndefined(mostRecentValue)) { return null }
+    return _.truncate('' + mostRecentValue, {length: 3})
   }
 
   renderPortGui ({port}) {

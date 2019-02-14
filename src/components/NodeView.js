@@ -3,8 +3,6 @@ import _ from 'lodash'
 
 import PortView from './PortView.js'
 
-const nop = () => null
-
 export class NodeView extends React.Component {
   constructor (props) {
     super(props)
@@ -44,7 +42,7 @@ export class NodeView extends React.Component {
 
   render () {
     const style = Object.assign({
-      width: '150px',
+      width: '200px',
       borderRadius: '5px',
       border: 'thin solid hsl(0, 0%, 90%)',
     }, this.props.style)
