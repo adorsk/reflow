@@ -105,16 +105,16 @@ export class PortView extends React.Component {
   }
 
   renderValueDetail ({port}) {
+    const value = port.getMostRecentValue()
     if (port.ctx && port.ctx.renderValueDetail) {
-      return port.ctx.renderValueDetail({port})
+      return port.ctx.renderValueDetail({value, port})
     }
-    return this.defaultRenderValueDetail({port})
+    return this.defaultRenderValueDetail({value, port})
   }
 
-  defaultRenderValueDetail ({port}) {
-    const mostRecentValue = port.getMostRecentValue()
-    if (_.isUndefined(mostRecentValue)) { return null }
-    return _.truncate('' + mostRecentValue, {length: 3})
+  defaultRenderValueDetail ({value, port}) {
+    if (_.isUndefined(value)) { return null }
+    return _.truncate('' + value, {length: 3})
   }
 
   renderPortGui ({port}) {

@@ -33,6 +33,16 @@ class ColorInput extends React.Component {
   }
 }
 
+const ColorIcon = (props) => {
+  return (
+    <div style={{
+      height: '1em',
+      width: '1.4em',
+      background: props.color,
+    }}/>
+  )
+}
+
 class InputsError extends Error {}
 
 const getInputValues = ({node, inputKeys}) => {
@@ -116,7 +126,12 @@ const graphFactory = ({store} = {}) => {
         points: {},
         fillStyle: {
           initialValues: ['blue'],
-          ctx: { getGuiComponent: () => ColorInput }
+          ctx: {
+            getGuiComponent: () => ColorInput,
+            renderValueDetail: ({value}) => {
+              return (value) ? (<ColorIcon color={value} />) : null
+            }
+          }
         },
       },
       'outputs': {
