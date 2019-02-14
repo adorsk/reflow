@@ -46,7 +46,10 @@ export class Graph {
 
   tickNode (node) {
     try { node.tick() }
-    catch (err) { console.error(err) }
+    catch (err) {
+      console.error(err)
+      node.setErrors([err])
+    }
     node.quenchInputs()
   }
 

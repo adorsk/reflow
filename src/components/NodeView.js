@@ -1,5 +1,6 @@
 import React from 'react'
 import _ from 'lodash'
+import { Message } from 'semantic-ui-react'
 
 import PortView from './PortView.js'
 
@@ -54,6 +55,7 @@ export class NodeView extends React.Component {
       >
         {this.renderLabel()}
         {this.renderPorts()}
+        {this.renderErrors()}
         {this.renderView()}
         {this.props.showDebug ? this.renderDebug() : null}
       </div>
@@ -129,6 +131,21 @@ export class NodeView extends React.Component {
           })
         }
       </div>
+    )
+  }
+
+  renderErrors () {
+    const { node } = this.props
+    const errors = node.errors
+    if (! errors || errors.length < 1) { return null }
+    return (
+      <Message negative style={{maxHeight: '6em', overflow: 'auto'}}>
+        <ul>
+          {errors.map((err, i) => (
+            <li key={i}>{'' + err}</li>
+          )) }
+        </ul>
+      </Message>
     )
   }
 

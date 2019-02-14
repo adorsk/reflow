@@ -50,9 +50,9 @@ const getInputValues = ({node, inputKeys}) => {
   for (let inputKey of inputKeys) {
     const port = node.getPort('inputs:' + inputKey)
     inputValues[inputKey] = port.mostRecentValue
-  }
-  if (_.some(inputValues, _.isUndefined)) {
-    throw new InputsError()
+    if (_.isUndefined(inputValues[inputKey])) {
+      throw new InputsError(`'${inputKey}' is undefined`)
+    }
   }
   return inputValues
 }
@@ -99,13 +99,10 @@ const graphFactory = ({store} = {}) => {
     },
     tickFn ({node}) {
       if (! node.hasHotInputs()) { return }
-      let inputValues
-      try {
-        inputValues = getInputValues({
-          node,
-          inputKeys: Object.keys(node.getInputPorts())
-        })
-      } catch (err) { return }
+      const inputValues = getInputValues({
+        node,
+        inputKeys: Object.keys(node.getInputPorts())
+      })
       const points = []
       for (let x = inputValues.x0; x < inputValues.x1; x += inputValues.dx) {
         for (let y = inputValues.y0; y < inputValues.y1; y += inputValues.dy) {
@@ -133,6 +130,9 @@ const graphFactory = ({store} = {}) => {
             }
           }
         },
+        shapeFn: {
+          initialValues: [],
+        },
       },
       'outputs': {
         shapes: {},
@@ -140,25 +140,13 @@ const graphFactory = ({store} = {}) => {
     },
     tickFn ({node}) {
       if (!node.hasHotInputs()) { return }
-      let inputValues
-      try { 
-        inputValues = getInputValues({
-          node,
-          inputKeys: ['points', 'fillStyle']
-        })
-      } catch (err) { return }
+      const inputValues = getInputValues({
+        node,
+        inputKeys: ['points', 'fillStyle', 'shapeFn']
+      })
       const shapes = inputValues.points.map((point) => {
-        const shape = {
-          x: point.x,
-          y: point.y,
-          d: ([
-            ['M', point.x, point.y],
-            ['l', 5, 5],
-            ['l', 5, -5],
-            ['z'],
-          ].map((cmd) => cmd.join(' ')).join(' ')),
-          fillStyle: inputValues.fillStyle,
-        }
+        const shape = inputValues.shapeFn({point})
+        shape.fillStyle = inputValues.fillStyle
         return shape
       })
       node.getPort('outputs:shapes').pushValues([shapes])
@@ -168,6 +156,37 @@ const graphFactory = ({store} = {}) => {
   graph.addWire({
     src: { nodeId: 'pointGen', portId: 'points' },
     dest: { nodeId: 'pointsToShapes', portId: 'points' }
+  })
+
+  graph.addNode(Node.fromSpec({
+    id: 'triangleFn',
+    ports: {
+      'outputs': {
+        shapeFn: {},
+      },
+    },
+    tickFn ({node}) {
+      if (!node.hasHotInputs()) { return }
+      const shapeFn = ({point}) => {
+        const shape = {
+          x: point.x,
+          y: point.y,
+          d: ([
+            ['M', point.x, point.y],
+            ['l', 5, 5],
+            ['l', 5, -5],
+            ['z'],
+          ].map((cmd) => cmd.join(' ')).join(' ')),
+        }
+        return shape
+      }
+      node.getPort('outputs:shapeFn').pushValues([shapeFn])
+    },
+  }))
+
+  graph.addWire({
+    src: { nodeId: 'triangleFn', portId: 'shapeFn' },
+    dest: { nodeId: 'pointsToShapes', portId: 'shapeFn' }
   })
 
   // renderer

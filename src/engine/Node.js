@@ -31,6 +31,7 @@ export class Node {
       tickFn: 0,
     }
     this.debouncedTick = _.debounce(this.tick.bind(this), 0)
+    this.errors = []
   }
 
   setState (state) {
@@ -48,6 +49,11 @@ export class Node {
         this.changed.dispatch({type: ioType})
       }
     })
+  }
+
+  setErrors (errors) {
+    this.errors = errors
+    this.changed.dispatch({type: 'errors'})
   }
 
   tick() {
