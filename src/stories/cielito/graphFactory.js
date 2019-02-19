@@ -162,30 +162,55 @@ const graphFactory = ({store} = {}) => {
     id: 'triangleFn',
     ports: {
       'outputs': {
-        shapeFn: {},
+        shapeFn: {
+          initialValues: [
+            function shapeFn ({point}) {
+              const shape = {
+                x: point.x,
+                y: point.y,
+                d: ([
+                  ['M', point.x, point.y],
+                  ['l', 5, 5],
+                  ['l', 5, -5],
+                  ['z'],
+                ].map((cmd) => cmd.join(' ')).join(' ')),
+              }
+              return shape
+            }
+          ]
+        },
       },
     },
-    tickFn ({node}) {
-      if (!node.hasHotInputs()) { return }
-      const shapeFn = ({point}) => {
-        const shape = {
-          x: point.x,
-          y: point.y,
-          d: ([
-            ['M', point.x, point.y],
-            ['l', 5, 5],
-            ['l', 5, -5],
-            ['z'],
-          ].map((cmd) => cmd.join(' ')).join(' ')),
-        }
-        return shape
-      }
-      node.getPort('outputs:shapeFn').pushValues([shapeFn])
+  }))
+
+  graph.addNode(Node.fromSpec({
+    id: 'diamondFn',
+    ports: {
+      'outputs': {
+        shapeFn: {
+          initialValues: [
+            function shapeFn ({point}) {
+              const shape = {
+                x: point.x,
+                y: point.y,
+                d: ([
+                  ['M', point.x, point.y],
+                  ['l', 5, 5],
+                  ['l', 10, -5],
+                  ['l', -5, -5],
+                  ['z'],
+                ].map((cmd) => cmd.join(' ')).join(' ')),
+              }
+              return shape
+            }
+          ]
+        },
+      },
     },
   }))
 
   graph.addWire({
-    src: { nodeId: 'triangleFn', portId: 'shapeFn' },
+    src: { nodeId: 'diamondFn', portId: 'shapeFn' },
     dest: { nodeId: 'pointsToShapes', portId: 'shapeFn' }
   })
 

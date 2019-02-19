@@ -45,7 +45,10 @@ export class Graph {
   }
 
   tickNode (node) {
-    try { node.tick() }
+    try {
+      node.tick()
+      node.setErrors([])
+    }
     catch (err) {
       console.error(err)
       node.setErrors([err])
