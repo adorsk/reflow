@@ -64,208 +64,221 @@ const graphFactory = ({store} = {}) => {
   })
 
   // pointGen
-  graph.addNode(Node.fromSpec({
-    id: 'pointGen',
-    ports: {
-      'inputs': {
-        x0: {
-          initialValues: [0],
-          ctx: { getGuiComponent: () => NumberInput }
+  graph.addNodeFromSpec({
+    nodeSpec: {
+      id: 'pointGen',
+      portSpecs: {
+        'inputs': {
+          x0: {
+            initialValues: [0],
+            ctx: { getGuiComponent: () => NumberInput }
+          },
+          x1: {
+            initialValues: [100],
+            ctx: { getGuiComponent: () => NumberInput }
+          },
+          dx: {
+            initialValues: [10],
+            ctx: { getGuiComponent: () => NumberInput }
+          },
+          y0: {
+            initialValues: [0],
+            ctx: { getGuiComponent: () => NumberInput }
+          },
+          y1: {
+            initialValues: [100],
+            ctx: { getGuiComponent: () => NumberInput }
+          },
+          dy: {
+            initialValues: [10],
+            ctx: { getGuiComponent: () => NumberInput }
+          },
         },
-        x1: {
-          initialValues: [100],
-          ctx: { getGuiComponent: () => NumberInput }
-        },
-        dx: {
-          initialValues: [10],
-          ctx: { getGuiComponent: () => NumberInput }
-        },
-        y0: {
-          initialValues: [0],
-          ctx: { getGuiComponent: () => NumberInput }
-        },
-        y1: {
-          initialValues: [100],
-          ctx: { getGuiComponent: () => NumberInput }
-        },
-        dy: {
-          initialValues: [10],
-          ctx: { getGuiComponent: () => NumberInput }
+        'outputs': {
+          points: {},
         },
       },
-      'outputs': {
-        points: {},
-      },
-    },
-    tickFn ({node}) {
-      if (! node.hasHotInputs()) { return }
-      const inputValues = getInputValues({
-        node,
-        inputKeys: Object.keys(node.getInputPorts())
-      })
-      const points = []
-      for (let x = inputValues.x0; x < inputValues.x1; x += inputValues.dx) {
-        for (let y = inputValues.y0; y < inputValues.y1; y += inputValues.dy) {
-          const point = {x, y}
-          point.toString = () => JSON.stringify(point)
-          points.push(point)
+      tickFn ({node}) {
+        if (! node.hasHotInputs()) { return }
+        const inputValues = getInputValues({
+          node,
+          inputKeys: Object.keys(node.getInputPorts())
+        })
+        const points = []
+        for (let x = inputValues.x0; x < inputValues.x1; x += inputValues.dx) {
+          for (let y = inputValues.y0; y < inputValues.y1; y += inputValues.dy) {
+            const point = {x, y}
+            point.toString = () => JSON.stringify(point)
+            points.push(point)
+          }
         }
-      }
-      node.getPort('outputs:points').pushValues([points])
-    },
-  }))
+        node.getPort('outputs:points').pushValues([points])
+      },
+    }
+  })
 
   // pointsToShapes
-  graph.addNode(Node.fromSpec({
-    id: 'pointsToShapes',
-    ports: {
-      'inputs': {
-        points: {},
-        fillStyle: {
-          initialValues: ['blue'],
-          ctx: {
-            getGuiComponent: () => ColorInput,
-            renderValueDetail: ({value}) => {
-              return (value) ? (<ColorIcon color={value} />) : null
+  graph.addNodeFromSpec({
+    nodeSpec: {
+      id: 'pointsToShapes',
+      portSpecs: {
+        'inputs': {
+          points: {},
+          fillStyle: {
+            initialValues: ['blue'],
+            ctx: {
+              getGuiComponent: () => ColorInput,
+              renderValueDetail: ({value}) => {
+                return (value) ? (<ColorIcon color={value} />) : null
+              }
             }
-          }
+          },
+          shapeFn: {},
         },
-        shapeFn: {
-          initialValues: [],
+        'outputs': {
+          shapes: {},
         },
       },
-      'outputs': {
-        shapes: {},
+      tickFn ({node}) {
+        if (!node.hasHotInputs()) { return }
+        const inputValues = getInputValues({
+          node,
+          inputKeys: ['points', 'fillStyle', 'shapeFn']
+        })
+        const shapes = inputValues.points.map((point) => {
+          const shape = inputValues.shapeFn({point})
+          shape.fillStyle = inputValues.fillStyle
+          return shape
+        })
+        node.getPort('outputs:shapes').pushValues([shapes])
       },
-    },
-    tickFn ({node}) {
-      if (!node.hasHotInputs()) { return }
-      const inputValues = getInputValues({
-        node,
-        inputKeys: ['points', 'fillStyle', 'shapeFn']
-      })
-      const shapes = inputValues.points.map((point) => {
-        const shape = inputValues.shapeFn({point})
-        shape.fillStyle = inputValues.fillStyle
-        return shape
-      })
-      node.getPort('outputs:shapes').pushValues([shapes])
-    },
-  }))
+    }
+  })
 
   graph.addWire({
     src: { nodeId: 'pointGen', portId: 'points' },
     dest: { nodeId: 'pointsToShapes', portId: 'points' }
   })
 
-  graph.addNode(Node.fromSpec({
-    id: 'triangleFn',
-    ports: {
-      'outputs': {
-        shapeFn: {
-          initialValues: [
-            function shapeFn ({point}) {
-              const shape = {
-                x: point.x,
-                y: point.y,
-                d: ([
-                  ['M', point.x, point.y],
-                  ['l', 5, 5],
-                  ['l', 5, -5],
-                  ['z'],
-                ].map((cmd) => cmd.join(' ')).join(' ')),
+  graph.addNodeFromSpec({
+    nodeSpec: {
+      id: 'triangleFn',
+      portSpecs: {
+        'outputs': {
+          shapeFn: {
+            behaviors: {
+              constant: {
+                valueFn: () => {
+                  const value = (function shapeFn ({point}) {
+                    const shape = {
+                      x: point.x,
+                      y: point.y,
+                      d: ([
+                        ['M', point.x, point.y],
+                        ['l', 5, 4],
+                        ['l', 5, -5],
+                        ['z'],
+                      ].map((cmd) => cmd.join(' ')).join(' ')),
+                    }
+                    return shape
+                  })
+                  return value
+                },
               }
-              return shape
-            }
-          ]
+            },
+          },
         },
       },
-    },
-  }))
+    }
+  })
 
-  graph.addNode(Node.fromSpec({
-    id: 'diamondFn',
-    ports: {
-      'outputs': {
-        shapeFn: {
-          initialValues: [
-            function shapeFn ({point}) {
-              const shape = {
-                x: point.x,
-                y: point.y,
-                d: ([
-                  ['M', point.x, point.y],
-                  ['l', 5, 5],
-                  ['l', 10, -5],
-                  ['l', -5, -5],
-                  ['z'],
-                ].map((cmd) => cmd.join(' ')).join(' ')),
+  graph.addNodeFromSpec({
+    nodeSpec: {
+      id: 'diamondFn',
+      portSpecs: {
+        'outputs': {
+          shapeFn: {
+            initialValues: [
+              function shapeFn ({point}) {
+                const shape = {
+                  x: point.x,
+                  y: point.y,
+                  d: ([
+                    ['M', point.x, point.y],
+                    ['l', 5, 5],
+                    ['l', 10, -5],
+                    ['l', -5, -5],
+                    ['z'],
+                  ].map((cmd) => cmd.join(' ')).join(' ')),
+                }
+                return shape
               }
-              return shape
-            }
-          ]
+            ]
+          },
         },
       },
-    },
-  }))
+    }
+  })
 
   graph.addWire({
-    src: { nodeId: 'diamondFn', portId: 'shapeFn' },
+    src: { nodeId: 'triangleFn', portId: 'shapeFn' },
     dest: { nodeId: 'pointsToShapes', portId: 'shapeFn' }
   })
 
   // renderer
-  graph.addNode(Node.fromSpec({
-    id: 'shapesToCanvas',
-    ports: {
-      'inputs': {
-        shapes: {},
+  graph.addNodeFromSpec({
+    nodeSpec: {
+      id: 'shapesToCanvas',
+      portSpecs: {
+        'inputs': {
+          shapes: {},
+        },
+        'outputs': {
+          canvas: {},
+        },
       },
-      'outputs': {
-        canvas: {},
-      },
-    },
-    tickFn ({node}) {
-      if (! node.hasHotInputs()) { return }
-      const inputValues = getInputValues({node, inputKeys: ['shapes']})
-      const shapes = inputValues['shapes']
-      const canvas = document.createElement('canvas')
-      const bounds = {
-        x: {min: _.minBy(shapes, 'x').x, max: _.maxBy(shapes, 'x').x},
-        y: {min: _.minBy(shapes, 'y').y, max: _.maxBy(shapes, 'y').y},
-      }
-      canvas.width = bounds.x.max - bounds.x.min
-      canvas.height  = bounds.y.max - bounds.y.min
-      const ctx = canvas.getContext('2d')
-      for (let shape of shapes) {
-        const shapePath = new Path2D(shape.d)
-        ctx.fillStyle = shape.fillStyle
-        ctx.fill(shapePath)
-      }
-      node.getPort('outputs:canvas').pushValues([canvas])
-    },
-    ctx: {
-      getGuiComponent () {
-        class GuiComponent extends React.Component {
-          constructor (props) {
-            super(props)
-            this.rootRef = React.createRef()
-          }
-          render () { return (<div ref={this.rootRef}/>) }
-          componentDidMount () { this.updateCanvas() }
-          componentDidUpdate () { this.updateCanvas() }
-          updateCanvas () {
-            const { node } = this.props
-            const rootEl = this.rootRef.current
-            rootEl.innerHTML = ''
-            const canvas = node.getPort('outputs:canvas').mostRecentValue
-            if (canvas) { rootEl.appendChild(canvas) }
-          }
+      tickFn ({node}) {
+        if (! node.hasHotInputs()) { return }
+        const inputValues = getInputValues({node, inputKeys: ['shapes']})
+        const shapes = inputValues['shapes']
+        const canvas = document.createElement('canvas')
+        const bounds = {
+          x: {min: _.minBy(shapes, 'x').x, max: _.maxBy(shapes, 'x').x},
+          y: {min: _.minBy(shapes, 'y').y, max: _.maxBy(shapes, 'y').y},
         }
-        return GuiComponent
+        canvas.width = bounds.x.max - bounds.x.min
+        canvas.height  = bounds.y.max - bounds.y.min
+        const ctx = canvas.getContext('2d')
+        for (let shape of shapes) {
+          const shapePath = new Path2D(shape.d)
+          ctx.fillStyle = shape.fillStyle
+          ctx.fill(shapePath)
+        }
+        node.getPort('outputs:canvas').pushValues([canvas])
+      },
+      ctx: {
+        getGuiComponent () {
+          class GuiComponent extends React.Component {
+            constructor (props) {
+              super(props)
+              this.rootRef = React.createRef()
+            }
+            render () { return (<div ref={this.rootRef}/>) }
+            componentDidMount () { this.updateCanvas() }
+            componentDidUpdate () { this.updateCanvas() }
+            updateCanvas () {
+              const { node } = this.props
+              const rootEl = this.rootRef.current
+              rootEl.innerHTML = ''
+              const canvas = node.getPort('outputs:canvas').mostRecentValue
+              if (canvas) { rootEl.appendChild(canvas) }
+            }
+          }
+          return GuiComponent
+        }
       }
     }
-  }))
+  })
   graph.addWire({
     src: {nodeId: 'pointsToShapes', portId: 'shapes'},
     dest: {nodeId: 'shapesToCanvas', portId: 'shapes'},

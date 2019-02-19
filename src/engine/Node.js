@@ -51,9 +51,9 @@ export class Node {
     })
   }
 
-  setErrors (errors) {
+  setErrors (errors, opts = {noSignals: false}) {
     this.errors = errors
-    this.changed.dispatch({type: 'errors'})
+    if (!opts.noSignals) { this.changed.dispatch({type: 'errors'}) }
   }
 
   tick() {
@@ -167,20 +167,28 @@ export class Node {
 }
 
 Node.fromSpec = (spec) => {
-  const nodeOpts = {...spec}
-  if (spec.ports) {
-    let ports = {}
-    for (let ioType of Object.keys(spec.ports)) {
-      ports[ioType] = []
-      const portSpecsForIoTypes = spec.ports[ioType]
-      for (let key of Object.keys(portSpecsForIoTypes)) {
-        const portOpts = {id: key, ioType, ...portSpecsForIoTypes[key]}
-        ports[ioType].push(new Port(portOpts))
-      }
-    }
-    nodeOpts.ports = ports
-  }
+  const { portSpecs, ...nodeOpts } = spec
   const node = new Node(nodeOpts)
+  _.each(portSpecs, (portSpecsForIoType, ioType) => {
+    _.each(portSpecsForIoType, (portSpec, portId) => {
+      const portKey = [ioType, portId].join(':')
+      let portState = node.state.get(portKey)
+      if (_.isUndefined(portState)) {
+        portState = new Map()
+        node.state.set(portKey, portState)
+      }
+      node.addPort({
+        port: new Port({
+          id: portId,
+          state: portState,
+          ioType,
+          node,
+          ...portSpec,
+        }),
+        ioType
+      })
+    })
+  })
   return node
 }
 

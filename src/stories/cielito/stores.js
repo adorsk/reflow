@@ -15,7 +15,7 @@ async function getStoresPromise () {
   const viewStore = new ObservableMapStore({
     initialValues: initialViewStoreValues
   })
-  viewStore.store.observe(async () => {
+  viewStore.store.observe(async (delta) => {
     try {
       const doc = await viewDb.get('viewStore')
       viewDb.put({

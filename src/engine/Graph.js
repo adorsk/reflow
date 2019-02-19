@@ -2,6 +2,7 @@ import _ from 'lodash'
 import signals from 'signals'
 import { observable } from 'mobx'
 
+import Node from './Node.js'
 import ObservableMapStore from './ObservableMapStore.js'
 
 export class Graph {
@@ -28,7 +29,7 @@ export class Graph {
     this.state = state
   }
 
-  onChanged () {
+  onChanged (evt) {
     this.tick()
   }
 
@@ -46,8 +47,8 @@ export class Graph {
 
   tickNode (node) {
     try {
+      node.setErrors([], {noSignals: true})
       node.tick()
-      node.setErrors([])
     }
     catch (err) {
       console.error(err)
@@ -71,29 +72,18 @@ export class Graph {
 
   getWires () { return this.wires }
 
+  addNodeFromSpec ({nodeSpec, opts}) {
+    const node = Node.fromSpec({
+      ...nodeSpec,
+      state: this.store.getOrCreate({key: nodeSpec.id}),
+    })
+    this.addNode(node, opts)
+  }
+
   addNode (node, opts = {noSignals: false}) {
     this.nodes[node.id] = node
-    node.setState(this.store.getOrCreate({key: node.id}))
-    for (let port of node.getPorts()) {
-      const portKey = [node.id, port.id].join(':')
-      port.setState(this.store.getOrCreate({key: portKey + '-state'}))
-      port.setValues(this.store.getOrCreate({
-        key: portKey + '-values',
-        factoryFn: () => [],
-      }))
-      // @TODO: Yuck. State is getting messy here, may
-      // want to move this to Node.fromSpec .
-      if (! port.state.get('initialized')) {
-        if (port.initialValues) {
-          port.pushValues(port.initialValues)
-        }
-        port.state.set('initialized', true)
-      }
-    }
     node.changed.add(this.changed.dispatch)
-    if (!opts.noSignals) {
-      this.changed.dispatch()
-    }
+    if (!opts.noSignals) { this.changed.dispatch() }
   }
 
   removeNode ({nodeId}) {
