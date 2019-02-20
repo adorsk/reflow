@@ -67,15 +67,12 @@ export class Node {
     this.tickCount = count 
   }
 
-  getPort (arg1) {
-    let portId, ioType
-    if (typeof arg1 === 'string') {
-      [ioType, portId] = arg1.split(':')
-    } else {
-      portId = arg1.portId
-      ioType = arg1.ioType
+  getPort (portSpec) {
+    if (typeof portSpec === 'string') {
+      const [ioType, portId] = portSpec.split(':')
+      portSpec = {ioType, portId}
     }
-    return this.ports[ioType][portId]
+    return this.ports[portSpec.ioType][portSpec.portId]
   }
 
   getPorts () {
