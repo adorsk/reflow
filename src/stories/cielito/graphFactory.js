@@ -1,9 +1,9 @@
 import React from 'react'
 import _ from 'lodash'
 import { ChromePicker } from 'react-color'
+import { Dropdown } from 'semantic-ui-react'
 
 import Graph from '../../engine/Graph.js'
-import Node from '../../engine/Node.js'
 
 
 const NumberInput = (props) => {
@@ -222,13 +222,6 @@ const graphFactory = ({store} = {}) => {
     }
   })
 
-  graph.addWireFromSpec({
-    wireSpec: {
-      src: { nodeId: 'triangleFn', portId: 'shapeFn' },
-      dest: { nodeId: 'pointsToShapes', portId: 'shapeFn' }
-    }
-  })
-
   // renderer
   graph.addNodeFromSpec({
     nodeSpec: {
@@ -307,18 +300,52 @@ const graphFactory = ({store} = {}) => {
       ctx: {
         getGuiComponent () {
           class GuiComponent extends React.Component {
+            constructor (props) {
+              super(props)
+              this.nullOption = {key: 'NULL', value: 'NULL', text: '---'}
+              this.state = {
+                selectedValue: (
+                  props.node.state.get('selectedValue') || this.nullOption.value
+                )
+              }
+            }
+
             render () {
-              const options = this.getOptions()
-              console.log("options: ", options)
-              return (<pre>{JSON.stringify(options, null, 2)}</pre>)
+              return (
+                <Dropdown
+                  options={this.getOptions()}
+                  value={this.state.selectedValue}
+                  onChange={(e, {value}) => {
+                    this.setState({selectedValue: value})
+                    let valueToPush
+                    if (value === this.nullOption.value) {
+                      valueToPush = null
+                    } else {
+                      const selectedWire = this.optionsPort.wires[value]
+                      valueToPush = selectedWire.src.port.mostRecentValue
+                    }
+                    this.outputPort.pushValues([valueToPush])
+                  }}
+                />
+              )
             }
 
             getOptions () {
-              const port = this.props.node.getPort('inputs:options')
-              const options = _.map(port.wires, (wire) => {
-                return { id: wire.id }
+              const wireOptions = _.map(this.optionsPort.wires, (wire) => {
+                return {
+                  key: wire.id,
+                  value: wire.id,
+                  text: [wire.src.node.id, wire.src.port.id].join(':'),
+                }
               })
-              return options
+              return [this.nullOption, ...wireOptions]
+            }
+
+            get optionsPort () {
+              return this.props.node.getPort('inputs:options')
+            }
+            get outputPort () {
+              return this.props.node.getPort('outputs:selected')
             }
           }
 
@@ -338,6 +365,13 @@ const graphFactory = ({store} = {}) => {
     wireSpec: {
       src: {nodeId: 'diamondFn', portId: 'shapeFn'},
       dest: {nodeId: 'shapeFnSelect', portId: 'options'},
+    }
+  })
+
+  graph.addWireFromSpec({
+    wireSpec: {
+      src: { nodeId: 'shapeFnSelect', portId: 'selected' },
+      dest: { nodeId: 'pointsToShapes', portId: 'shapeFn' }
     }
   })
 
