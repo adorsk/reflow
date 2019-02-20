@@ -149,15 +149,15 @@ class GraphView extends React.Component {
 
   updateWireViewPos ({wireView}) {
     const wire = wireView.getWire()
-    const srcNodeView = this.nodeViews[wire.src.nodeId]
+    const srcNodeView = this.nodeViews[wire.src.node.id]
     const srcPortView = srcNodeView.getPortView({
       ioType: 'outputs',
-      portId: wire.src.portId
+      portId: wire.src.port.id
     })
-    const destNodeView = this.nodeViews[wire.dest.nodeId]
+    const destNodeView = this.nodeViews[wire.dest.node.id]
     const destPortView = destNodeView.getPortView({
       ioType: 'inputs',
-      portId: wire.dest.portId,
+      portId: wire.dest.port.id,
     })
     wireView.setPositions({
       src: srcPortView.getHandlePagePos(),

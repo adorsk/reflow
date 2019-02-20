@@ -3,6 +3,7 @@ import signals from 'signals'
 import { observable } from 'mobx'
 
 import Node from './Node.js'
+import Wire from './Wire.js'
 import ObservableMapStore from './ObservableMapStore.js'
 
 export class Graph {
@@ -59,17 +60,9 @@ export class Graph {
 
   propagateOutputs () {
     for (let wire of Object.values(this.wires)) {
-      const ports = this.getPortsForWire({wire})
-      while (ports.src.values.length) {
-        ports.dest.pushValues([ports.src.shiftValue()])
+      while (wire.src.port.values.length) {
+        wire.dest.port.pushValues([wire.src.port.shiftValue()])
       }
-    }
-  }
-
-  getPortsForWire ({wire}) {
-    return {
-      src: this.nodes[wire.src.nodeId].getOutputPort(wire.src.portId),
-      dest: this.nodes[wire.dest.nodeId].getInputPort(wire.dest.portId),
     }
   }
 
@@ -96,18 +89,18 @@ export class Graph {
     delete this.nodes[nodeId]
   }
 
-  addWire (wire, opts = {noSignals: false}) {
-    const id = this.deriveIdForWire(wire)
-    const decoratedWire = {id, ...wire}
-    this.wires[id] = decoratedWire
-    const ports = this.getPortsForWire({wire})
-    console.log("ps: ", ports)
-    for (let port of [ports.src, ports.dest]) {
-      port.addWire({wire})
-    }
-    if (!opts.noSignals) {
-      this.changed.dispatch()
-    }
+  addWireFromSpec ({wireSpec, opts}) {
+    this.addWire({
+      wire: Wire.fromSpec({wireSpec, nodes: this.nodes}),
+      opts
+    })
+  }
+
+  addWire ({wire, opts = {noSignals: false}}) {
+    this.wires[wire.id] = wire
+    wire.src.port.addWire({wire})
+    wire.dest.port.addWire({wire})
+    if (!opts.noSignals) { this.changed.dispatch() }
   }
 
   deriveIdForWire (wire) {

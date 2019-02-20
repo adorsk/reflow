@@ -155,9 +155,11 @@ const graphFactory = ({store} = {}) => {
     }
   })
 
-  graph.addWire({
-    src: { nodeId: 'pointGen', portId: 'points' },
-    dest: { nodeId: 'pointsToShapes', portId: 'points' }
+  graph.addWireFromSpec({
+    wireSpec: {
+      src: { nodeId: 'pointGen', portId: 'points' },
+      dest: { nodeId: 'pointsToShapes', portId: 'points' }
+    }
   })
 
   graph.addNodeFromSpec({
@@ -220,9 +222,11 @@ const graphFactory = ({store} = {}) => {
     }
   })
 
-  graph.addWire({
-    src: { nodeId: 'triangleFn', portId: 'shapeFn' },
-    dest: { nodeId: 'pointsToShapes', portId: 'shapeFn' }
+  graph.addWireFromSpec({
+    wireSpec: {
+      src: { nodeId: 'triangleFn', portId: 'shapeFn' },
+      dest: { nodeId: 'pointsToShapes', portId: 'shapeFn' }
+    }
   })
 
   // renderer
@@ -279,9 +283,11 @@ const graphFactory = ({store} = {}) => {
       }
     }
   })
-  graph.addWire({
-    src: {nodeId: 'pointsToShapes', portId: 'shapes'},
-    dest: {nodeId: 'shapesToCanvas', portId: 'shapes'},
+  graph.addWireFromSpec({
+    wireSpec: {
+      src: {nodeId: 'pointsToShapes', portId: 'shapes'},
+      dest: {nodeId: 'shapesToCanvas', portId: 'shapes'},
+    }
   })
 
   graph.addNodeFromSpec({
@@ -303,17 +309,14 @@ const graphFactory = ({store} = {}) => {
           class GuiComponent extends React.Component {
             render () {
               const options = this.getOptions()
+              console.log("options: ", options)
               return (<pre>{JSON.stringify(options, null, 2)}</pre>)
             }
 
             getOptions () {
               const port = this.props.node.getPort('inputs:options')
-              console.log("p: ", port.wires)
-              const options = _.each(port.wires, (wire, wireId) => {
-                return {
-                  id: wireId,
-                  label: [wire.src.nodeId, wire.src.portId].join(':'),
-                }
+              const options = _.map(port.wires, (wire) => {
+                return { id: wire.id }
               })
               return options
             }
@@ -325,13 +328,17 @@ const graphFactory = ({store} = {}) => {
     }
   })
 
-  graph.addWire({
-    src: {nodeId: 'triangleFn', portId: 'shapeFn'},
-    dest: {nodeId: 'shapeFnSelect', portId: 'options'},
+  graph.addWireFromSpec({
+    wireSpec: {
+      src: {nodeId: 'triangleFn', portId: 'shapeFn'},
+      dest: {nodeId: 'shapeFnSelect', portId: 'options'},
+    }
   })
-  graph.addWire({
-    src: {nodeId: 'diamondFn', portId: 'shapeFn'},
-    dest: {nodeId: 'shapeFnSelect', portId: 'options'},
+  graph.addWireFromSpec({
+    wireSpec: {
+      src: {nodeId: 'diamondFn', portId: 'shapeFn'},
+      dest: {nodeId: 'shapeFnSelect', portId: 'options'},
+    }
   })
 
   return graph
