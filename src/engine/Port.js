@@ -19,6 +19,7 @@ class Port {
     this.setState(opts.state || new Map())
     this.hotValues = []
     this.ioType = opts.ioType
+    this.wires = {}
 
     if (_.isUndefined(this.state.get('initialized'))) {
       this.values = observable([])
@@ -102,6 +103,10 @@ class Port {
 
   unmount () {
     this.changed.removeAll()
+  }
+
+  addWire ({wire}) {
+    this.wires[wire.id] = wire
   }
 }
 

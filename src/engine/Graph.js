@@ -59,12 +59,17 @@ export class Graph {
 
   propagateOutputs () {
     for (let wire of Object.values(this.wires)) {
-      const { src, dest } = wire
-      const srcPort = this.nodes[src.nodeId].getOutputPort(src.portId)
-      const destPort = this.nodes[dest.nodeId].getInputPort(dest.portId)
-      while (srcPort.values.length) {
-        destPort.pushValues([srcPort.shiftValue()])
+      const ports = this.getPortsForWire({wire})
+      while (ports.src.values.length) {
+        ports.dest.pushValues([ports.src.shiftValue()])
       }
+    }
+  }
+
+  getPortsForWire ({wire}) {
+    return {
+      src: this.nodes[wire.src.nodeId].getOutputPort(wire.src.portId),
+      dest: this.nodes[wire.dest.nodeId].getInputPort(wire.dest.portId),
     }
   }
 
@@ -92,14 +97,20 @@ export class Graph {
   }
 
   addWire (wire, opts = {noSignals: false}) {
-    const key = this.deriveKeyForWire(wire)
-    this.wires[key] = wire
+    const id = this.deriveIdForWire(wire)
+    const decoratedWire = {id, ...wire}
+    this.wires[id] = decoratedWire
+    const ports = this.getPortsForWire({wire})
+    console.log("ps: ", ports)
+    for (let port of [ports.src, ports.dest]) {
+      port.addWire({wire})
+    }
     if (!opts.noSignals) {
       this.changed.dispatch()
     }
   }
 
-  deriveKeyForWire (wire) {
+  deriveIdForWire (wire) {
     const { src, dest } = wire
     const key = [src, dest].map((terminal) => {
       return [terminal.nodeId, terminal.portId].join(':')

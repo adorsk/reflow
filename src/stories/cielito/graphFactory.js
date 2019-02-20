@@ -284,6 +284,56 @@ const graphFactory = ({store} = {}) => {
     dest: {nodeId: 'shapesToCanvas', portId: 'shapes'},
   })
 
+  graph.addNodeFromSpec({
+    nodeSpec: {
+      id: 'shapeFnSelect',
+      portSpecs: {
+        inputs: {
+          options: {},
+        },
+        outputs: {
+          selected: {},
+        },
+      },
+      tickFn ({node}) {
+        if (! node.hasHotInputs()) { return }
+      },
+      ctx: {
+        getGuiComponent () {
+          class GuiComponent extends React.Component {
+            render () {
+              const options = this.getOptions()
+              return (<pre>{JSON.stringify(options, null, 2)}</pre>)
+            }
+
+            getOptions () {
+              const port = this.props.node.getPort('inputs:options')
+              console.log("p: ", port.wires)
+              const options = _.each(port.wires, (wire, wireId) => {
+                return {
+                  id: wireId,
+                  label: [wire.src.nodeId, wire.src.portId].join(':'),
+                }
+              })
+              return options
+            }
+          }
+
+          return GuiComponent
+        }
+      }
+    }
+  })
+
+  graph.addWire({
+    src: {nodeId: 'triangleFn', portId: 'shapeFn'},
+    dest: {nodeId: 'shapeFnSelect', portId: 'options'},
+  })
+  graph.addWire({
+    src: {nodeId: 'diamondFn', portId: 'shapeFn'},
+    dest: {nodeId: 'shapeFnSelect', portId: 'options'},
+  })
+
   return graph
 }
 
