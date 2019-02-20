@@ -19,7 +19,8 @@ export class Graph {
     this.nodes = {}
     this.tickCount = 0
     this.changed = new signals.Signal()
-    this.changed.add(_.debounce(this.onChanged.bind(this), 0))
+    this.debouncedTick = _.debounce(this.tick, 0)
+    this.changed.add(this.onChanged.bind(this))
   }
 
   createStore () {
@@ -31,11 +32,13 @@ export class Graph {
   }
 
   onChanged (evt) {
-    this.tick()
+    if (evt && evt.type && evt.type === 'node') {
+      if (evt.data && evt.data.type === 'errors') { return }
+    }
+    this.debouncedTick()
   }
 
   tick () {
-    this.propagateOutputs()
     this.tickNodes()
     this.tickCount += 1
   }
@@ -55,15 +58,6 @@ export class Graph {
       console.error(err)
       node.setErrors([err])
     }
-    node.quenchInputs()
-  }
-
-  propagateOutputs () {
-    for (let wire of Object.values(this.wires)) {
-      while (wire.src.port.values.length) {
-        wire.dest.port.pushValues([wire.src.port.shiftValue()])
-      }
-    }
   }
 
   getNodes () { return this.nodes }
@@ -80,8 +74,10 @@ export class Graph {
 
   addNode (node, opts = {noSignals: false}) {
     this.nodes[node.id] = node
-    node.changed.add(this.changed.dispatch)
-    if (!opts.noSignals) { this.changed.dispatch() }
+    node.changed.add((evt) => this.changed.dispatch({type: 'node', data: evt}))
+    if (!opts.noSignals) {
+      this.changed.dispatch({type: 'node:add', data: {node}})
+    }
   }
 
   removeNode ({nodeId}) {
@@ -100,7 +96,9 @@ export class Graph {
     this.wires[wire.id] = wire
     wire.src.port.addWire({wire})
     wire.dest.port.addWire({wire})
-    if (!opts.noSignals) { this.changed.dispatch() }
+    if (!opts.noSignals) {
+      this.changed.dispatch({type: 'wire:add', data: {wire}})
+    }
   }
 
   deriveIdForWire (wire) {

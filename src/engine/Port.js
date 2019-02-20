@@ -97,7 +97,7 @@ class Port {
     return this.getMostRecentValue()
   }
 
-  hasHotValues () {
+  isHot () {
     return (this.hotValues.length > 0)
   }
 
@@ -107,6 +107,10 @@ class Port {
 
   addWire ({wire}) {
     this.wires[wire.id] = wire
+  }
+
+  drainIncomingHotWires () {
+    _.each(this.wires, ((wire) => (wire.isHot()) ? wire.propagate() : null))
   }
 }
 

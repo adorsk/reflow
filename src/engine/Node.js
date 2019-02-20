@@ -9,6 +9,10 @@ const DISPOSER_KEY = Symbol('disposer_key')
 export class Node {
   constructor (opts = {}) {
     this.id = opts.id || _.uniqueId('node-')
+    this.behaviors = Object.assign({
+      drainIncomingHotWiresBeforeTick: true,
+      quenchHotInputsAfterTick: true,
+    }, opts.behaviors)
     this.ctx = opts.ctx
     this.changed = new signals.Signal()
     this.tickFn = opts.tickFn
@@ -37,7 +41,9 @@ export class Node {
   setState (state) {
     if (this[DISPOSER_KEY]) { this[DISPOSER_KEY]() } // unbind prev state
     state = (state.observe) ? state : observable.map(state)
-    this[DISPOSER_KEY] = state.observe(this.changed.dispatch)
+    this[DISPOSER_KEY] = state.observe(() => {
+      this.changed.dispatch({type: 'state'})
+    })
     this.state = state
   }
 
@@ -46,7 +52,7 @@ export class Node {
     this.ports[ioType][port.id] = port
     port.changed.add((evt) => {
       if (evt.type === 'push') {
-        this.changed.dispatch({type: ioType})
+        this.changed.dispatch({type: ioType, data: evt})
       }
     })
   }
@@ -57,10 +63,20 @@ export class Node {
   }
 
   tick() {
+    if (this.behaviors.drainIncomingHotWiresBeforeTick) {
+      this.drainIncomingHotWires()
+    }
     if (this.tickFn) {
       this.tickFn({node: this})
     }
+    if (this.behaviors.quenchHotInputsAfterTick) {
+      this.quenchHotInputs()
+    }
     this.setTickCount(this.tickCount + 1)
+  }
+
+  drainIncomingHotWires () {
+    _.each(this.getInputPorts(), port => port.drainIncomingHotWires())
   }
 
   setTickCount (count) {
@@ -101,10 +117,10 @@ export class Node {
   getOutputPorts () { return this.ports['outputs'] }
 
   hasHotInputs () {
-    return _.some(this.getInputPorts(), port => port.hasHotValues())
+    return _.some(this.getInputPorts(), port => port.isHot())
   }
 
-  quenchInputs () {
+  quenchHotInputs () {
     _.each(this.getInputPorts(), port => port.quenchHotValues())
   }
 

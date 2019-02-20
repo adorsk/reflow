@@ -6,6 +6,8 @@ import { Dropdown } from 'semantic-ui-react'
 import Graph from '../../engine/Graph.js'
 
 
+
+
 const NumberInput = (props) => {
   const { port } = props
   return (
@@ -317,6 +319,7 @@ const graphFactory = ({store} = {}) => {
                   value={this.state.selectedValue}
                   onChange={(e, {value}) => {
                     this.setState({selectedValue: value})
+                    this.props.node.state.set('selectedValue', value)
                     let valueToPush
                     if (value === this.nullOption.value) {
                       valueToPush = null

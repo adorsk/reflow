@@ -11,6 +11,16 @@ export class Wire {
     this.dest = dest
   }
 
+  isHot () {
+    return this.src.port.isHot()
+  }
+
+  propagate () {
+    while (this.src.port.values.length) {
+      this.dest.port.pushValues([this.src.port.shiftValue()])
+    }
+  }
+
   static fromSpec ({wireSpec = {}, nodes = {}} = {}) {
     if (_.isString(wireSpec)) {
       const [srcSpec, destSpec] = wireSpec.split(
