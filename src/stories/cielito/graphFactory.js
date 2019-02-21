@@ -179,7 +179,7 @@ const graphFactory = ({store} = {}) => {
                       y: point.y,
                       d: ([
                         ['M', point.x, point.y],
-                        ['l', 5, 4],
+                        ['l', 5, 5],
                         ['l', 5, -5],
                         ['z'],
                       ].map((cmd) => cmd.join(' ')).join(' ')),

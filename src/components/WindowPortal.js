@@ -13,12 +13,16 @@ class WindowPortal extends React.PureComponent {
   }
 
   componentDidMount() {
-    this.externalWindow = window.open('', '', 'width=600,height=400,left=200,top=200')
+    this.externalWindow = window.open(
+      '',
+      (this.props.windowName || ''),
+      'width=600,height=400,left=200,top=200'
+    )
     this.externalWindow.document.body.appendChild(this.containerEl)
   }
 
   componentWillUnmount() {
-    this.externalWindow.close()
+    // this.externalWindow.close()
   }
 }
 
