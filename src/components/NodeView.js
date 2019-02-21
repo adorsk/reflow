@@ -1,7 +1,8 @@
 import React from 'react'
 import _ from 'lodash'
-import { Message } from 'semantic-ui-react'
+import { Button, Message } from 'semantic-ui-react'
 
+import WindowPortal from './WindowPortal.js'
 import PortView from './PortView.js'
 
 export class NodeView extends React.Component {
@@ -153,9 +154,29 @@ export class NodeView extends React.Component {
     const { node } = this.props
     if (!this.GuiComponent) { return }
     const GuiComponent = this.GuiComponent
+    const gui = (<GuiComponent node={node} />)
+    const useWindowPortal = node.state.get('useWindowPortal')
     return (
       <div className="view">
-        <GuiComponent node={node} />
+        {
+          (useWindowPortal) ? (
+            <div>
+              <Button
+                content="pop it back"
+                onClick={() => node.state.set('useWindowPortal', false)}
+              />
+              <WindowPortal>{gui}</WindowPortal>
+            </div>
+          ) : (
+            <div>
+              <Button
+                content="pop it out!"
+                onClick={() => node.state.set('useWindowPortal', true)}
+              />
+              {gui}
+            </div>
+          )
+        }
       </div>
     )
   }

@@ -90,6 +90,11 @@ class Port {
   }
 
   getMostRecentValue () {
+    // @TODO: fix this! it's a hack to patch stuff just
+    // enough to test other things. But need to get a proper solution.
+    if (this.behaviors.constant) {
+      return this.behaviors.constant.valueFn()
+    }
     return this.values[this.values.length - 1]
   }
 
