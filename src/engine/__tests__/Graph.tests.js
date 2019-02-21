@@ -55,4 +55,10 @@ describe('Graph', () => {
       expect(changeCounter).toEqual(1)
     })
   })
+
+  describe('addWire', () => {
+    it('calls onConnect', () => {
+      this.fail()
+    })
+  })
 })

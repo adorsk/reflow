@@ -28,4 +28,26 @@ describe('Wire', () => {
       expect(wire.dest.port).toBe(mockNodes.dest.getPort('inputs:port2'))
     })
   })
+
+  describe('pushValue', () => {
+    it('pushes value to queue', () => {
+      this.fail()
+    })
+
+    it('sets hot flag', () => {
+      this.fail()
+    })
+  })
+
+  describe('quench', () => {
+    it('unsets hot flag', () => {
+      this.fail()
+    })
+  })
+
+  describe('onConnect', () => {
+    it('copies or drains from src to dest', () => {
+      this.fail()
+    })
+  })
 })

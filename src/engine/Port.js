@@ -8,18 +8,15 @@ const STATE_DISPOSER_KEY = Symbol('state_disposer_key')
 const VALUES_KEY = 'VALUES'
 
 class Port {
-
   constructor (opts = {}) {
     this.id = opts.id
-    this.node = opts.node
     this.behaviors = opts.behaviors || {}
     this.ctx = opts.ctx
     this.changed = new signals.Signal()
     this.setNode(opts.node)
     this.setState(opts.state || new Map())
-    this.hotValues = []
     this.ioType = opts.ioType
-    this.wires = {}
+    this.wires = []
 
     if (_.isUndefined(this.state.get('initialized'))) {
       this.values = observable([])
@@ -39,9 +36,6 @@ class Port {
     }
   }
 
-  get values () { return this.state.get(VALUES_KEY) || [] }
-  set values (values_) { this.state.set(VALUES_KEY, values_) }
-
   setNode (node) {
     this.node = node
   }
@@ -56,66 +50,30 @@ class Port {
     this.state = state
   }
 
-  pushValues (values, opts = {}) {
-    opts = {hot: true, noSignals: false, ...opts}
-    this.values.push(...values)
-    if (opts.hot) {
-      this.hotValues.push(...values)
+  get values () { return this.state.get(VALUES_KEY) || [] }
+  set values (values_) { this.state.set(VALUES_KEY, values_) }
+
+  pushValue (value) {
+  }
+
+  onPushOutputValue (value) {
+    let shouldDrain = false
+    const drainingBehaviors = ['drain', 'debouncedDrain']
+    for (let wire of this.wires) {
+      wire.pushValue(value)
+      const drainBehavior = _.get(wire, 'behaviors.drain')
+      shouldDrain = drainingBehaviors.includes(drainBehavior)
+      if (drainBehavior === 'drain') { break }
     }
-    if (!opts.noSignals) {
-      this.changed.dispatch({type: 'push'})
-    }
+    if (!shouldDrain) { this.values.push(value) }
   }
 
-  shiftValue (opts = {}) {
-    opts = {noSignals: false, ...opts}
-    const value = this.values.shift()
-    if (!opts.noSignals) {
-      this.changed.dispatch({type: 'shift'})
-    }
-    return value
-  }
-
-  popValue (opts = {}) {
-    opts = {noSignals: false, ...opts}
-    const value = this.values.pop()
-    if (!opts.noSignals) {
-      this.changed.dispatch({type: 'pop'})
-    }
-    return value
-  }
-
-  quenchHotValues () {
-    this.hotValues = []
-  }
-
-  getMostRecentValue () {
-    // @TODO: fix this! it's a hack to patch stuff just
-    // enough to test other things. But need to get a proper solution.
-    if (this.behaviors.constant) {
-      return this.behaviors.constant.valueFn()
-    }
-    return this.values[this.values.length - 1]
-  }
-
-  get mostRecentValue () {
-    return this.getMostRecentValue()
-  }
-
-  isHot () {
-    return (this.hotValues.length > 0)
+  addWire ({wire}) {
+    this.wires.push(wire)
   }
 
   unmount () {
     this.changed.removeAll()
-  }
-
-  addWire ({wire}) {
-    this.wires[wire.id] = wire
-  }
-
-  drainIncomingHotWires () {
-    _.each(this.wires, ((wire) => (wire.isHot()) ? wire.propagate() : null))
   }
 }
 
