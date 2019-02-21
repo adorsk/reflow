@@ -59,39 +59,4 @@ describe('Node', () => {
       expect(node.getPort('outputs:out')).toBe(outPort)
     })
   })
-
-  describe('hasHotInputs', () => {
-    it('returns true if any input port is hot', () => {
-      const node = new Node()
-      const inputPorts = [1,2,3].map((i) => new Port({id: `in${i}`}))
-      for (let inputPort of inputPorts) {
-        node.addPort({port: inputPort, ioType: 'inputs'})
-      }
-      inputPorts[2].pushValues(['caliente'])
-      expect(node.hasHotInputs()).toBe(true)
-    })
-
-    it('returns false if no input port is hot', () => {
-      const node = new Node()
-      const inputPorts = [1,2,3].map((i) => new Port({id: `in${i}`}))
-      for (let inputPort of inputPorts) {
-        node.addPort({port: inputPort, ioType: 'inputs'})
-      }
-      expect(node.hasHotInputs()).toBe(false)
-    })
-  })
-
-  describe('quenchInputs', () => {
-    it('quenches all input ports', () => {
-      const node = new Node()
-      const inputPorts = [1,2,3].map((i) => new Port({id: `in${i}`}))
-      for (let inputPort of inputPorts) {
-        inputPort.pushValues(['a hot value'])
-        node.addPort({port: inputPort, ioType: 'inputs'})
-      }
-      expect(node.hasHotInputs()).toBe(true)
-      node.quenchInputs()
-      expect(node.hasHotInputs()).toBe(false)
-    })
-  })
 })

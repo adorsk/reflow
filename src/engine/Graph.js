@@ -70,6 +70,7 @@ export class Graph {
       state: this.store.getOrCreate({key: nodeSpec.id}),
     })
     this.addNode(node, opts)
+    return node
   }
 
   addNode (node, opts = {noSignals: false}) {
