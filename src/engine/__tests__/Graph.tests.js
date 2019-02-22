@@ -55,13 +55,7 @@ describe('Graph', () => {
     })
   })
 
-  describe('addWire', () => {
-    it('calls onConnect', () => {
-      this.fail()
-    })
-  })
-
-  describe('drainPort', () => {
+  describe('drainPortValues', () => {
     const wireFactory = ({drainBehavior}) => {
       const values = []
       return {
@@ -80,7 +74,7 @@ describe('Graph', () => {
       const debounceWire = wireFactory({drainBehavior: 'debouncedDrain'})
       const copyWire = wireFactory({drainBehavior: 'copy'})
       const port = { values: [1] }
-      graph.drainPort({port, wires: [debounceWire, copyWire]})
+      graph.drainPortValues({port, wires: [debounceWire, copyWire]})
       expect(debounceWire.values).toEqual([1])
       expect(copyWire.values).toEqual([1])
       expect(port.values).toEqual([])
@@ -90,7 +84,7 @@ describe('Graph', () => {
       const drainWire = wireFactory({drainBehavior: 'drain'})
       const copyWire = wireFactory({drainBehavior: 'copy'})
       const port = { values: [1] }
-      graph.drainPort({port, wires: [drainWire, copyWire]})
+      graph.drainPortValues({port, wires: [drainWire, copyWire]})
       expect(drainWire.values).toEqual([1])
       expect(copyWire.values).toEqual([])
       expect(port.values).toEqual([])
@@ -99,7 +93,7 @@ describe('Graph', () => {
     it('does not drain if there were no draining wires', () => {
       const copyWire = wireFactory({drainBehavior: 'copy'})
       const port = { values: [1] }
-      graph.drainPort({port, wires: [copyWire]})
+      graph.drainPortValues({port, wires: [copyWire]})
       expect(copyWire.values).toEqual([1])
       expect(port.values).toEqual([1])
     })

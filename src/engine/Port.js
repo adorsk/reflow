@@ -20,7 +20,9 @@ class Port {
 
     if (_.isUndefined(this.state.get('initialized'))) {
       this.values = observable([])
-      if (opts.initialValues) { this.pushValues(opts.initialValues) }
+      for (let value of (opts.initialValues || [])) {
+        this.pushValue(value)
+      }
       this.state.set('initialized', true)
     }
 
@@ -31,7 +33,7 @@ class Port {
       const currentHash = stringToHashCode(valueFn.toString())
       if (currentHash !== prevHash) {
         this.state.set(stateKey, currentHash)
-        this.pushValues([valueFn()])
+        this.pushValue(valueFn())
       }
     }
   }
@@ -44,9 +46,7 @@ class Port {
     // unbind prev state
     if (this[STATE_DISPOSER_KEY]) { this[STATE_DISPOSER_KEY]() }
     state = (state.observe) ? state : observable(state)
-    this[STATE_DISPOSER_KEY] = state.observe((delta) => {
-      this.changed.dispatch()
-    })
+    this[STATE_DISPOSER_KEY] = state.observe(this.changed.dispatch)
     this.state = state
   }
 
@@ -54,22 +54,19 @@ class Port {
   set values (values_) { this.state.set(VALUES_KEY, values_) }
 
   pushValue (value) {
+    this.values.push(value)
+    this.state.set('hot', true)
   }
 
-  onPushOutputValue (value) {
-    let shouldDrain = false
-    const drainingBehaviors = ['drain', 'debouncedDrain']
-    for (let wire of this.wires) {
-      wire.pushValue(value)
-      const drainBehavior = _.get(wire, 'behaviors.drain')
-      shouldDrain = drainingBehaviors.includes(drainBehavior)
-      if (drainBehavior === 'drain') { break }
-    }
-    if (!shouldDrain) { this.values.push(value) }
-  }
+  quench () { this.state.set('hot', false) }
+  isHot () { return this.state.get('hot') }
 
   addWire ({wire}) {
     this.wires.push(wire)
+  }
+
+  get mostRecentValue () {
+    return ((this.values.length > 0) ? this.values[this.values.length - 1] : undefined)
   }
 
   unmount () {

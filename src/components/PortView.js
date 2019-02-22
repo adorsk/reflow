@@ -105,7 +105,7 @@ export class PortView extends React.Component {
   }
 
   renderValueDetail ({port}) {
-    const value = port.getMostRecentValue()
+    const value = port.mostRecentValue
     if (port.ctx && port.ctx.renderValueDetail) {
       return port.ctx.renderValueDetail({value, port})
     }

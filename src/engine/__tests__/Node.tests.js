@@ -42,7 +42,7 @@ describe('Node', () => {
         expect(changeCounter).toEqual(0)
         const port = new Port()
         node.addPort({port, ioType: 'inputs'})
-        port.pushValues(['someValue'])
+        port.pushValue('someValue')
         expect(changeCounter).toEqual(1)
       })
     })

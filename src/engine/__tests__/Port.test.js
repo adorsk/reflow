@@ -25,15 +25,4 @@ describe('Port', () => {
       expect(changeCounter).toEqual(1)
     })
   })
-
-  describe('onConnect', () => {
-    it('pushes values to wire', () => {
-      this.fail()
-    })
-
-    it('drains value queue only for draining wires', () => {
-      this.fail()
-    })
-  })
-
 })

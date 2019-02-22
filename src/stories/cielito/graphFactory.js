@@ -16,7 +16,7 @@ const NumberInput = (props) => {
       try { 
         value = parseFloat(evt.target.value)
       } catch (err) {}
-      port.pushValues([value])
+      port.pushValue(value)
     }} />
   )
 }
@@ -29,7 +29,7 @@ class ColorInput extends React.Component {
       <ChromePicker
         color={this.state.color}
         onChange={(color) => this.setState({color})}
-        onChangeComplete={(color) => { port.pushValues([color.hex]) }}
+        onChangeComplete={(color) => { port.pushValue(color.hex) }}
       />
     )
   }
@@ -114,7 +114,7 @@ const graphFactory = ({store} = {}) => {
             points.push(point)
           }
         }
-        node.getPort('outputs:points').pushValues([points])
+        node.getPort('outputs:points').pushValue(points)
       },
     }
   })
@@ -152,7 +152,7 @@ const graphFactory = ({store} = {}) => {
           shape.fillStyle = inputValues.fillStyle
           return shape
         })
-        node.getPort('outputs:shapes').pushValues([shapes])
+        node.getPort('outputs:shapes').pushValue(shapes)
       },
     }
   })
@@ -179,7 +179,7 @@ const graphFactory = ({store} = {}) => {
                       y: point.y,
                       d: ([
                         ['M', point.x, point.y],
-                        ['l', 5, 5],
+                        ['l', 5, 10],
                         ['l', 5, -5],
                         ['z'],
                       ].map((cmd) => cmd.join(' ')).join(' ')),
@@ -253,7 +253,7 @@ const graphFactory = ({store} = {}) => {
           ctx.fillStyle = shape.fillStyle
           ctx.fill(shapePath)
         }
-        node.getPort('outputs:canvas').pushValues([canvas])
+        node.getPort('outputs:canvas').pushValue(canvas)
       },
       ctx: {
         getGuiComponent () {
@@ -324,10 +324,10 @@ const graphFactory = ({store} = {}) => {
                     if (value === this.nullOption.value) {
                       valueToPush = null
                     } else {
-                      const selectedWire = this.optionsPort.wires[value]
+                      const selectedWire = _.find(this.optionsPort.wires, {id: value})
                       valueToPush = selectedWire.src.port.mostRecentValue
                     }
-                    this.outputPort.pushValues([valueToPush])
+                    this.outputPort.pushValue(valueToPush)
                   }}
                 />
               )
@@ -362,12 +362,14 @@ const graphFactory = ({store} = {}) => {
     wireSpec: {
       src: {nodeId: 'triangleFn', portId: 'shapeFn'},
       dest: {nodeId: 'shapeFnSelect', portId: 'options'},
+      behaviors: {drain: 'copy'},
     }
   })
   graph.addWireFromSpec({
     wireSpec: {
       src: {nodeId: 'diamondFn', portId: 'shapeFn'},
       dest: {nodeId: 'shapeFnSelect', portId: 'options'},
+      behaviors: {drain: 'copy'},
     }
   })
 

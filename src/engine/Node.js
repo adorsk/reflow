@@ -10,7 +10,6 @@ export class Node {
   constructor (opts = {}) {
     this.id = opts.id || _.uniqueId('node-')
     this.behaviors = Object.assign({
-      drainIncomingHotWiresBeforeTick: true,
       quenchHotInputsAfterTick: true,
     }, opts.behaviors)
     this.ctx = opts.ctx
@@ -51,9 +50,7 @@ export class Node {
     port.setNode(this)
     this.ports[ioType][port.id] = port
     port.changed.add((evt) => {
-      if (evt.type === 'push') {
-        this.changed.dispatch({type: ioType, data: evt})
-      }
+      this.changed.dispatch({type: ioType, data: {port}})
     })
   }
 
@@ -63,9 +60,6 @@ export class Node {
   }
 
   tick() {
-    if (this.behaviors.drainIncomingHotWiresBeforeTick) {
-      this.drainIncomingHotWires()
-    }
     if (this.tickFn) {
       this.tickFn({node: this})
     }
@@ -121,7 +115,9 @@ export class Node {
   }
 
   quenchHotInputs () {
-    _.each(this.getInputPorts(), port => port.quenchHotValues())
+    _.each(this.getInputPorts(), (port) => {
+      if (port.isHot()) { port.quench() }
+    })
   }
 
   updateState (updates) {

@@ -53,13 +53,13 @@ export class Graph {
   drainNodeOutputs ({node}) {
     for (let port of Object.values(node.getOutputPorts())) {
       if (port.isHot()) {
-        this.drainPortOutputs({port, wire: port.wires})
+        this.drainPortValues({port, wires: port.wires})
         port.quench()
       }
     }
   }
 
-  drainPort ({port, wires}) {
+  drainPortValues ({port, wires}) {
     const drainingBehaviors = ['drain', 'debouncedDrain']
     const indicesOfValuesToDrain = []
     for (let i = 0; i < port.values.length; i++) {

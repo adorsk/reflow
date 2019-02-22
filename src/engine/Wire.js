@@ -5,20 +5,22 @@ export class Wire {
 
   static NODE_PORT_SEPARATOR = ':'
 
-  constructor ({id = '', src = {}, dest = {}} = {}) {
+  constructor ({id = '', src = {}, dest = {}, behaviors} = {}) {
     this.id = id
     this.src = src
     this.dest = dest
+    this.behaviors = {
+      drain: 'drain',
+      ...behaviors,
+    }
   }
 
   isHot () {
     return this.src.port.isHot()
   }
 
-  propagate () {
-    while (this.src.port.values.length) {
-      this.dest.port.pushValues([this.src.port.shiftValue()])
-    }
+  pushValue (value) {
+    this.dest.port.pushValue(value)
   }
 
   static fromSpec ({wireSpec = {}, nodes = {}} = {}) {
@@ -43,7 +45,8 @@ export class Wire {
     }
     const wire = new Wire({
       id: Wire.idFromTerminals({terminals}),
-      ...terminals
+      ...terminals,
+      behaviors: wireSpec.behaviors,
     })
     return wire
   }
