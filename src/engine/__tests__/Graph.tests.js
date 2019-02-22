@@ -1,7 +1,6 @@
 import Graph from '../Graph.js'
 import Node from '../Node.js'
 
-
 describe('Graph', () => {
 
   beforeEach(() => {
@@ -59,6 +58,50 @@ describe('Graph', () => {
   describe('addWire', () => {
     it('calls onConnect', () => {
       this.fail()
+    })
+  })
+
+  describe('drainPort', () => {
+    const wireFactory = ({drainBehavior}) => {
+      const values = []
+      return {
+        behaviors: { drain: drainBehavior },
+        values,
+        pushValue: values.push.bind(values),
+      }
+    }
+
+    let graph
+    beforeEach(() => {
+      graph = new Graph()
+    })
+
+    it('pushes to wires that come after debouncedDrain wires', () => {
+      const debounceWire = wireFactory({drainBehavior: 'debouncedDrain'})
+      const copyWire = wireFactory({drainBehavior: 'copy'})
+      const port = { values: [1] }
+      graph.drainPort({port, wires: [debounceWire, copyWire]})
+      expect(debounceWire.values).toEqual([1])
+      expect(copyWire.values).toEqual([1])
+      expect(port.values).toEqual([])
+    })
+
+    it('does not push to wires after a drain wire', () => {
+      const drainWire = wireFactory({drainBehavior: 'drain'})
+      const copyWire = wireFactory({drainBehavior: 'copy'})
+      const port = { values: [1] }
+      graph.drainPort({port, wires: [drainWire, copyWire]})
+      expect(drainWire.values).toEqual([1])
+      expect(copyWire.values).toEqual([])
+      expect(port.values).toEqual([])
+    })
+
+    it('does not drain if there were no draining wires', () => {
+      const copyWire = wireFactory({drainBehavior: 'copy'})
+      const port = { values: [1] }
+      graph.drainPort({port, wires: [copyWire]})
+      expect(copyWire.values).toEqual([1])
+      expect(port.values).toEqual([1])
     })
   })
 })

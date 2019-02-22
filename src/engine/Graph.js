@@ -39,8 +39,40 @@ export class Graph {
   }
 
   tick () {
+    this.drainOutputs()
     this.tickNodes()
     this.tickCount += 1
+  }
+
+  drainOutputs () {
+    for (let node of Object.values(this.nodes)) {
+      this.drainNodeOutputs({node})
+    }
+  }
+
+  drainNodeOutputs ({node}) {
+    for (let port of Object.values(node.getOutputPorts())) {
+      if (port.isHot()) {
+        this.drainPortOutputs({port, wire: port.wires})
+        port.quench()
+      }
+    }
+  }
+
+  drainPort ({port, wires}) {
+    const drainingBehaviors = ['drain', 'debouncedDrain']
+    const indicesOfValuesToDrain = []
+    for (let i = 0; i < port.values.length; i++) {
+      let shouldDrain = false
+      for (let wire of wires) {
+        wire.pushValue(port.values[i])
+        const drainBehavior = _.get(wire, 'behaviors.drain')
+        shouldDrain = shouldDrain || drainingBehaviors.includes(drainBehavior)
+        if (drainBehavior === 'drain') { break }
+      }
+      if (shouldDrain) { indicesOfValuesToDrain.push(i) }
+    }
+    _.pullAt(port.values, indicesOfValuesToDrain) // mutates port.values
   }
 
   tickNodes () {
