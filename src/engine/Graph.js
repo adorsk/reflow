@@ -119,30 +119,24 @@ export class Graph {
   }
 
   addWireFromSpec ({wireSpec, opts}) {
-    this.addWire({
-      wire: Wire.fromSpec({wireSpec, nodes: this.nodes}),
-      opts
-    })
+    const wire = Wire.fromSpec({wireSpec, nodes: this.nodes})
+    wire.setState(this.store.getOrCreate({key: wire.id}))
+    wire.init()
+    this.addWire({wire, opts})
   }
 
   addWire ({wire, opts = {noSignals: false}}) {
     this.wires[wire.id] = wire
     wire.src.port.addWire({wire})
     wire.dest.port.addWire({wire})
+    wire.changed.add((evt) => this.changed.dispatch({type: 'wire', data: evt}))
     if (!opts.noSignals) {
       this.changed.dispatch({type: 'wire:add', data: {wire}})
     }
   }
 
-  deriveIdForWire (wire) {
-    const { src, dest } = wire
-    const key = [src, dest].map((terminal) => {
-      return [terminal.nodeId, terminal.portId].join(':')
-    }).join(' => ')
-    return key
-  }
-
   removeWire ({wire, key}) {
+    this.wires[wire.id].unmount()
     delete this.wires[key]
   }
 

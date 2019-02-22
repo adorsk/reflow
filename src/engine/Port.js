@@ -13,14 +13,18 @@ class Port {
     this.behaviors = opts.behaviors || {}
     this.ctx = opts.ctx
     this.changed = new signals.Signal()
+    this.initialValues = opts.initialValues
     this.setNode(opts.node)
     this.setState(opts.state || new Map())
     this.ioType = opts.ioType
     this.wires = []
+    this.init()
+  }
 
+  init() {
     if (_.isUndefined(this.state.get('initialized'))) {
-      this.values = observable([])
-      for (let value of (opts.initialValues || [])) {
+      this.values = observable([], {deep: false})
+      for (let value of (this.initialValues || [])) {
         this.pushValue(value)
       }
       this.state.set('initialized', true)

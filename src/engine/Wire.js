@@ -1,26 +1,63 @@
 import _ from 'lodash'
+import { observable } from 'mobx'
+import signals from 'signals'
+
+const DISPOSER_KEY = Symbol('disposer_key')
+const VALUES_KEY = 'VALUES'
 
 export class Wire {
   static TERMINALS_SEPARATOR = '->'
 
   static NODE_PORT_SEPARATOR = ':'
 
-  constructor ({id = '', src = {}, dest = {}, behaviors} = {}) {
-    this.id = id
-    this.src = src
-    this.dest = dest
+  constructor (opts = {}) {
+    this.id = opts.id
+    this.src = opts.src
+    this.dest = opts.dest
     this.behaviors = {
       drain: 'drain',
-      ...behaviors,
+      ...opts.behaviors,
+    }
+    this.changed = new signals.Signal()
+    this.setState(opts.state || new Map())
+  }
+
+  init() {
+    if (_.isUndefined(this.state.get('initialized'))) {
+      this.values = observable([], {deep: false})
+      this.state.set('initialized', true)
     }
   }
 
-  isHot () {
-    return this.src.port.isHot()
+  get values () { return this.state.get(VALUES_KEY) || [] }
+  set values (values_) { this.state.set(VALUES_KEY, values_) }
+
+  setState (state) {
+    if (this[DISPOSER_KEY]) { this[DISPOSER_KEY]() } // unbind prev state
+    state = (state.observe) ? state : observable.map(state)
+    this[DISPOSER_KEY] = state.observe(() => {
+      this.changed.dispatch({type: 'state'})
+    })
+    this.state = state
   }
 
+  isHot () { return this.state.get('hot') }
+
   pushValue (value) {
-    this.dest.port.pushValue(value)
+    this.values.push(value)
+    this.state.set('hot', true)
+  }
+
+  shiftValue (value) {
+    return this.values.shift()
+  }
+
+  hasValues () { return this.values.length > 0 }
+
+  quench () { this.state.set('hot', false) }
+
+  unmount () {
+    this.changed.removeAll()
   }
 
   static fromSpec ({wireSpec = {}, nodes = {}} = {}) {

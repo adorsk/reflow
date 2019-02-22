@@ -179,7 +179,7 @@ const graphFactory = ({store} = {}) => {
                       y: point.y,
                       d: ([
                         ['M', point.x, point.y],
-                        ['l', 5, 10],
+                        ['l', 5, 5],
                         ['l', 5, -5],
                         ['z'],
                       ].map((cmd) => cmd.join(' ')).join(' ')),
@@ -202,22 +202,27 @@ const graphFactory = ({store} = {}) => {
       portSpecs: {
         'outputs': {
           shapeFn: {
-            initialValues: [
-              function shapeFn ({point}) {
-                const shape = {
-                  x: point.x,
-                  y: point.y,
-                  d: ([
-                    ['M', point.x, point.y],
-                    ['l', 5, 5],
-                    ['l', 10, -5],
-                    ['l', -5, -5],
-                    ['z'],
-                  ].map((cmd) => cmd.join(' ')).join(' ')),
+            behaviors: {
+              constant: {
+                valueFn: () => {
+                  function shapeFn ({point}) {
+                    const shape = {
+                      x: point.x,
+                      y: point.y,
+                      d: ([
+                        ['M', point.x, point.y],
+                        ['l', 5, 5],
+                        ['l', 5, -5],
+                        ['l', -5, -5],
+                        ['z'],
+                      ].map((cmd) => cmd.join(' ')).join(' ')),
+                    }
+                    return shape
+                  }
+                  return shapeFn
                 }
-                return shape
               }
-            ]
+            },
           },
         },
       },
@@ -296,8 +301,30 @@ const graphFactory = ({store} = {}) => {
           selected: {},
         },
       },
+      behaviors: {
+        drainIncomingHotWiresBeforeTick: false,
+      },
       tickFn ({node}) {
-        if (! node.hasHotInputs()) { return }
+        if (! node.state.get('selectedValue')) { return }
+        const selectedWire = _.find(
+          node.getPort('inputs:options').wires,
+          {id: node.state.get('selectedValue')}
+        )
+        if (! selectedWire) { return }
+        if (selectedWire.isHot()) {
+          let mostRecentValue = null
+          while (selectedWire.hasValues()) {
+            mostRecentValue = selectedWire.shiftValue()
+          }
+          selectedWire.quench()
+          node.state.set(selectedWire.id, mostRecentValue)
+          node.state.set('needsPush', true)
+        }
+        if (node.state.get('needsPush')) {
+          node.getPort('outputs:selected').pushValue(
+            node.state.get(selectedWire.id))
+          node.state.set('needsPush', false)
+        }
       },
       ctx: {
         getGuiComponent () {
@@ -319,22 +346,18 @@ const graphFactory = ({store} = {}) => {
                   value={this.state.selectedValue}
                   onChange={(e, {value}) => {
                     this.setState({selectedValue: value})
-                    this.props.node.state.set('selectedValue', value)
-                    let valueToPush
-                    if (value === this.nullOption.value) {
-                      valueToPush = null
-                    } else {
-                      const selectedWire = _.find(this.optionsPort.wires, {id: value})
-                      valueToPush = selectedWire.src.port.mostRecentValue
+                    if (this.props.node.state.get('selectedValue') !== value) {
+                      this.props.node.state.set('selectedValue', value)
+                      this.props.node.state.set('needsPush', true)
                     }
-                    this.outputPort.pushValue(valueToPush)
                   }}
                 />
               )
             }
 
             getOptions () {
-              const wireOptions = _.map(this.optionsPort.wires, (wire) => {
+              const optionsPort = this.props.node.getPort('inputs:options')
+              const wireOptions = _.map(optionsPort.wires, (wire) => {
                 return {
                   key: wire.id,
                   value: wire.id,
@@ -342,13 +365,6 @@ const graphFactory = ({store} = {}) => {
                 }
               })
               return [this.nullOption, ...wireOptions]
-            }
-
-            get optionsPort () {
-              return this.props.node.getPort('inputs:options')
-            }
-            get outputPort () {
-              return this.props.node.getPort('outputs:selected')
             }
           }
 
@@ -376,7 +392,7 @@ const graphFactory = ({store} = {}) => {
   graph.addWireFromSpec({
     wireSpec: {
       src: { nodeId: 'shapeFnSelect', portId: 'selected' },
-      dest: { nodeId: 'pointsToShapes', portId: 'shapeFn' }
+      dest: { nodeId: 'pointsToShapes', portId: 'shapeFn' },
     }
   })
 

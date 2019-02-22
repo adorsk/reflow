@@ -10,6 +10,7 @@ export class Node {
   constructor (opts = {}) {
     this.id = opts.id || _.uniqueId('node-')
     this.behaviors = Object.assign({
+      drainIncomingHotWiresBeforeTick: true,
       quenchHotInputsAfterTick: true,
     }, opts.behaviors)
     this.ctx = opts.ctx
@@ -60,6 +61,9 @@ export class Node {
   }
 
   tick() {
+    if (this.behaviors.drainIncomingHotWiresBeforeTick) {
+      this.drainIncomingHotWires()
+    }
     if (this.tickFn) {
       this.tickFn({node: this})
     }
@@ -70,7 +74,19 @@ export class Node {
   }
 
   drainIncomingHotWires () {
-    _.each(this.getInputPorts(), port => port.drainIncomingHotWires())
+    _.each(this.getInputPorts(), (port) => {
+      for (let wire of port.wires) {
+        if (! wire.isHot()) { return }
+        this.drainWire({wire})
+      }
+    })
+  }
+
+  drainWire ({wire}) {
+    while (wire.hasValues()) {
+      wire.dest.port.pushValue(wire.shiftValue())
+    }
+    wire.quench()
   }
 
   setTickCount (count) {
