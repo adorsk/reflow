@@ -62,6 +62,10 @@ class Port {
     this.state.set('hot', true)
   }
 
+  shiftValue (value) {
+    return this.values.shift()
+  }
+
   quench () { this.state.set('hot', false) }
   isHot () { return this.state.get('hot') }
 
