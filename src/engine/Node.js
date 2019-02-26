@@ -83,8 +83,8 @@ export class Node {
   }
 
   drainWire ({wire}) {
-    while (wire.hasValues()) {
-      wire.dest.port.pushValue(wire.shiftValue())
+    while (wire.hasPackets()) {
+      wire.dest.port.pushPacket(wire.shiftPacket())
     }
     wire.quench()
   }

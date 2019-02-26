@@ -3,7 +3,7 @@ import { observable } from 'mobx'
 import signals from 'signals'
 
 const DISPOSER_KEY = Symbol('disposer_key')
-const VALUES_KEY = 'VALUES'
+const PACKETS_KEY = 'PACKETS'
 
 export class Wire {
   static TERMINALS_SEPARATOR = '->'
@@ -24,13 +24,13 @@ export class Wire {
 
   init() {
     if (_.isUndefined(this.state.get('initialized'))) {
-      this.values = observable([], {deep: false})
+      this.packets = observable([], {deep: false})
       this.state.set('initialized', true)
     }
   }
 
-  get values () { return this.state.get(VALUES_KEY) || [] }
-  set values (values_) { this.state.set(VALUES_KEY, values_) }
+  get packets () { return this.state.get(PACKETS_KEY) || [] }
+  set packets (packets_) { this.state.set(PACKETS_KEY, packets_) }
 
   setState (state) {
     if (this[DISPOSER_KEY]) { this[DISPOSER_KEY]() } // unbind prev state
@@ -43,16 +43,16 @@ export class Wire {
 
   isHot () { return this.state.get('hot') }
 
-  pushValue (value) {
-    this.values.push(value)
+  pushPacket (packet) {
+    this.packets.push(packet)
     this.state.set('hot', true)
   }
 
-  shiftValue (value) {
-    return this.values.shift()
+  shiftPacket (packet) {
+    return this.packets.shift()
   }
 
-  hasValues () { return this.values.length > 0 }
+  hasPackets () { return this.packets.length > 0 }
 
   quench () { this.state.set('hot', false) }
 

@@ -82,8 +82,13 @@ const graphFactory = ({store} = {}) => {
             initialValues: ['blue'],
             ctx: {
               getGuiComponent: () => ColorInput,
-              renderValueDetail: ({value}) => {
-                return (value) ? (<ColorIcon color={value} />) : null
+              renderPacketSummary: ({packet}) => {
+                return (packet) ? (<ColorIcon color={packet.data} />) : null
+              },
+              renderPacketDetail: ({packet}) => {
+                return (packet) ? (
+                  <span>{packet.data} <ColorIcon color={packet.data} /></span>
+                ) : null
               }
             }
           },
@@ -264,12 +269,12 @@ const graphFactory = ({store} = {}) => {
         )
         if (! selectedWire) { return }
         if (selectedWire.isHot()) {
-          let mostRecentValue = null
-          while (selectedWire.hasValues()) {
-            mostRecentValue = selectedWire.shiftValue()
+          let mostRecentPacket = null
+          while (selectedWire.hasPackets()) {
+            mostRecentPacket = selectedWire.shiftPacket()
           }
           selectedWire.quench()
-          node.state.set(selectedWire.id, mostRecentValue)
+          node.state.set(selectedWire.id, mostRecentPacket.data)
           node.state.set('needsPush', true)
         }
         if (node.state.get('needsPush')) {

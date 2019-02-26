@@ -53,26 +53,26 @@ export class Graph {
   drainNodeOutputs ({node}) {
     for (let port of Object.values(node.getOutputPorts())) {
       if (port.isHot()) {
-        this.drainPortValues({port, wires: port.wires})
+        this.drainPortPackets({port, wires: port.wires})
         port.quench()
       }
     }
   }
 
-  drainPortValues ({port, wires}) {
+  drainPortPackets ({port, wires}) {
     const drainingBehaviors = ['drain', 'debouncedDrain']
-    const indicesOfValuesToDrain = []
-    for (let i = 0; i < port.values.length; i++) {
+    const indicesOfPacketsToDrain = []
+    for (let i = 0; i < port.packets.length; i++) {
       let shouldDrain = false
       for (let wire of wires) {
-        wire.pushValue(port.values[i])
+        wire.pushPacket(port.packets[i])
         const drainBehavior = _.get(wire, 'behaviors.drain')
         shouldDrain = shouldDrain || drainingBehaviors.includes(drainBehavior)
         if (drainBehavior === 'drain') { break }
       }
-      if (shouldDrain) { indicesOfValuesToDrain.push(i) }
+      if (shouldDrain) { indicesOfPacketsToDrain.push(i) }
     }
-    _.pullAt(port.values, indicesOfValuesToDrain) // mutates port.values
+    _.pullAt(port.packets, indicesOfPacketsToDrain) // mutates port.packets
   }
 
   tickNodes () {

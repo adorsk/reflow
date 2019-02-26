@@ -46,7 +46,7 @@ export class PortView extends React.Component {
         }}
       >
         {port.label || port.id}
-        <Label.Detail>{this.renderValueDetail({port})}</Label.Detail>
+        <Label.Detail>{this.renderMostRecentPacketSummary({port})}</Label.Detail>
       </Label>
     )
     const leftRight = (port.ioType === 'inputs') ? 'left' : 'right'
@@ -94,8 +94,12 @@ export class PortView extends React.Component {
           values
           <ul>
             {
-              port.values.map((value) => {
-                return (<li key={_.uniqueId()}>{'' + value}</li>)
+              port.packets.map((packet) => {
+                return (
+                  <li key={packet.timestamp}>
+                    {this.renderPacketDetail({packet, port})}
+                  </li>
+                )
               })
             }
           </ul>
@@ -104,17 +108,30 @@ export class PortView extends React.Component {
     )
   }
 
-  renderValueDetail ({port}) {
-    const value = port.mostRecentValue
-    if (port.ctx && port.ctx.renderValueDetail) {
-      return port.ctx.renderValueDetail({value, port})
-    }
-    return this.defaultRenderValueDetail({value, port})
+  renderMostRecentPacketSummary ({port}) {
+    const packet = port.mostRecentPacket
+    if (_.isUndefined(packet)) { return null }
+    return this.renderPacketSummary({packet, port})
   }
 
-  defaultRenderValueDetail ({value, port}) {
-    if (_.isUndefined(value)) { return null }
-    return _.truncate('' + value, {length: 3})
+  renderPacketSummary ({packet, port}) {
+    if (port.ctx && port.ctx.renderPacketSummary) {
+      return port.ctx.renderPacketSummary({packet, port})
+    }
+    return _.truncate(this.renderPacketDetail({packet, port}), {length: 3})
+  }
+
+  renderPacketDetail ({packet, port}) {
+    if (port.ctx && port.ctx.renderPacketDetail) {
+      return port.ctx.renderPacketDetail({packet, port})
+    }
+    return this.defaultRenderPacketDetail({packet, port})
+  }
+
+  defaultRenderPacketDetail ({packet, port}) {
+    if (packet.isOpenBracket()) { return '<' }
+    if (packet.isCloseBracket()) { return '>' }
+    if (packet.isData()) { return '' + packet.data }
   }
 
   renderPortGui ({port}) {

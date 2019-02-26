@@ -3,9 +3,10 @@ import { observable } from 'mobx'
 import signals from 'signals'
 
 import { stringToHashCode } from '../utils/index.js'
+import Packet from './Packet.js'
 
 const STATE_DISPOSER_KEY = Symbol('state_disposer_key')
-const VALUES_KEY = 'VALUES'
+const PACKETS_KEY = 'PACKETS'
 
 class Port {
   constructor (opts = {}) {
@@ -23,7 +24,7 @@ class Port {
 
   init() {
     if (_.isUndefined(this.state.get('initialized'))) {
-      this.values = observable([], {deep: false})
+      this.packets = observable([], {deep: false})
       for (let value of (this.initialValues || [])) {
         this.pushValue(value)
       }
@@ -54,16 +55,28 @@ class Port {
     this.state = state
   }
 
-  get values () { return this.state.get(VALUES_KEY) || [] }
-  set values (values_) { this.state.set(VALUES_KEY, values_) }
+  get packets () { return this.state.get(PACKETS_KEY) || [] }
+  set packets (packets_) { this.state.set(PACKETS_KEY, packets_) }
 
-  pushValue (value) {
-    this.values.push(value)
+  pushPacket (packet) {
+    this.packets.push(packet)
     this.state.set('hot', true)
   }
 
-  shiftValue (value) {
-    return this.values.shift()
+  pushValue (value) {
+    this.pushPacket(new Packet({type: Packet.Types.DATA, data: value}))
+  }
+
+  pushOpenBracket () {
+    this.pushPacket(new Packet({type: Packet.Types.OPEN}))
+  }
+
+  pushCloseBracket () {
+    this.pushPacket(new Packet({type: Packet.Types.CLOSE}))
+  }
+
+  shiftPacket (packet) {
+    return this.packets.shift()
   }
 
   quench () { this.state.set('hot', false) }
@@ -73,8 +86,14 @@ class Port {
     this.wires.push(wire)
   }
 
+  get mostRecentPacket () {
+    return ((this.packets.length > 0) ? this.packets[this.packets.length - 1] : undefined)
+  }
+
   get mostRecentValue () {
-    return ((this.values.length > 0) ? this.values[this.values.length - 1] : undefined)
+    const packet = this.mostRecentPacket
+    if (packet && (packet.type === Packet.Types.DATA)) { return packet.data }
+    return undefined
   }
 
   unmount () {

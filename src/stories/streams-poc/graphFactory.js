@@ -53,9 +53,9 @@ const graphFactory = ({store} = {}) => {
         const { items } = getInputValues({node, inputKeys: ['items']})
         if (_.isEmpty(items)) { return }
         const packetPort = node.getPort('outputs:packet')
-        packetPort.pushValue('<')
+        packetPort.pushOpenBracket()
         items.forEach((item) => packetPort.pushValue(item))
-        packetPort.pushValue('>')
+        packetPort.pushCloseBracket()
       },
     }
   })
@@ -79,15 +79,15 @@ const graphFactory = ({store} = {}) => {
       tickFn: ({node}) => {
         const packetPort = node.getPort('inputs:packet')
         const itemsPort = node.getPort('outputs:items')
-        while (packetPort.values.length > 0) {
-          const packet = packetPort.shiftValue()
-          if (packet === '<') {
+        while (packetPort.packets.length > 0) {
+          const packet = packetPort.shiftPacket()
+          if (packet.isOpenBracket()) {
             node.state.set('items', [])
-          } else if (packet === '>') {
+          } else if (packet.isCloseBracket()) {
             itemsPort.pushValue(node.state.get('items'))
             node.state.delete('items')
           } else {
-            node.state.get('items').push(packet)
+            node.state.get('items').push(packet.data)
           }
         }
       },
