@@ -79,6 +79,10 @@ class Port {
     return this.packets.shift()
   }
 
+  shiftValue (packet) {
+    return this.shiftPacket().data
+  }
+
   quench () { this.state.set('hot', false) }
   isHot () { return this.state.get('hot') }
 

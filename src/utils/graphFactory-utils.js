@@ -54,3 +54,21 @@ export const getInputValues = ({node, inputKeys}) => {
   }
   return inputValues
 }
+
+export function generateColorPortSpec () {
+  const colorPortSpec = {
+    initialValues: ['blue'],
+      ctx: {
+        getGuiComponent: () => ColorInput,
+          renderPacketSummary: ({packet}) => {
+            return (packet) ? (<ColorIcon color={packet.data} />) : null
+          },
+          renderPacketDetail: ({packet}) => {
+            return (packet) ? (
+              <span>{packet.data} <ColorIcon color={packet.data} /></span>
+            ) : null
+          }
+      }
+  }
+  return colorPortSpec
+}

@@ -111,6 +111,7 @@ export class Graph {
     if (!opts.noSignals) {
       this.changed.dispatch({type: 'node:add', data: {node}})
     }
+    if (node.ctx.didMountFn) { node.ctx.didMountFn({node}) }
   }
 
   removeNode ({nodeId}) {
