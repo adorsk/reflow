@@ -75,6 +75,8 @@ class Port {
     this.pushPacket(new Packet({type: Packet.Types.CLOSE}))
   }
 
+  hasPackets () { return this.packets.length > 0 }
+
   shiftPacket (packet) {
     return this.packets.shift()
   }

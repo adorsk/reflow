@@ -13,6 +13,12 @@ export class Packet {
   isOpenBracket () { return this.type === Packet.Types.OPEN }
   isCloseBracket () { return this.type === Packet.Types.CLOSE }
   isData () { return this.type === Packet.Types.DATA }
+  get value () {
+    if (!this.isData() ) {
+      throw new Error("cannot get value for non-data packet")
+    }
+    return this.data
+  }
 }
 
 Packet.Types = {

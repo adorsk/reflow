@@ -13,7 +13,7 @@ export class Node {
       drainIncomingHotWiresBeforeTick: true,
       quenchHotInputsAfterTick: true,
     }, opts.behaviors)
-    this.ctx = opts.ctx
+    this.ctx = opts.ctx || {}
     this.changed = new signals.Signal()
     this.tickFn = opts.tickFn
     this.setState(opts.state || new Map())

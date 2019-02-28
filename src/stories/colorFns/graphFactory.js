@@ -1,4 +1,5 @@
 import React from 'react'
+import _ from 'lodash'
 import chroma from 'chroma-js'
 
 import Graph from '../../engine/Graph.js'
@@ -94,6 +95,109 @@ const graphFactory = ({store} = {}) => {
         }
       },
     }
+  })
+
+  graph.addNodeFromSpec({
+    nodeSpec: {
+      id: 'decorator',
+      portSpecs: {
+        'inputs': {
+          decoratee: {},
+          decorators: {},
+        },
+        'outputs': {
+          decorated: {},
+        }
+      },
+      tickFn ({node}) {
+        if (!node.hasHotInputs()) { return }
+        const decorateePort = node.getPort('inputs:decoratee')
+        const decoratedPort = node.getPort('outputs:decorated')
+        const decoratorsPort = node.getPort('inputs:decorators')
+        if (! decoratorsPort.hasPackets()) { return }
+        const decorators = decoratorsPort.mostRecentValue
+        while (decorateePort.hasPackets()) {
+          const decorateePacket = node.getPort('inputs:decoratee').shiftPacket()
+          if (! decorateePacket.isData()) {
+            decoratedPort.pushPacket(decorateePacket)
+          }
+          let decoratee = decorateePacket.value
+          const decorations = _.mapValues(decorators, (decorator) => {
+            return decorator(decoratee)
+          })
+          const decorated = {...decoratee, ...decorations}
+          node.getPort('outputs:decorated').pushValue(decorated)
+        }
+      },
+    }
+  })
+
+  graph.addNodeFromSpec({
+    nodeSpec: {
+      id: 'itemGen',
+      portSpecs: {
+        'inputs': {
+          n: {
+            initialValues: [3],
+            ctx: { getGuiComponent: () => NumberInput }
+          },
+        },
+        'outputs': {
+          item: {},
+        }
+      },
+      tickFn ({node}) {
+        if (!node.hasHotInputs()) { return }
+        const n = node.getPort('inputs:n').shiftValue()
+        _.times(n, (i) => {
+          const item = {i}
+          item.toString = function () { return JSON.stringify(this) }
+          node.getPort('outputs:item').pushValue(item)
+        })
+      },
+    }
+  })
+
+  graph.addNodeFromSpec({
+    nodeSpec: {
+      id: 'decorators',
+      portSpecs: {
+        'inputs': {
+          decorators: {
+            behaviors: {
+              constant: {
+                valueFn: () => {
+                  const decorators = {
+                    foo (decoratee) {
+                      return ['foo', decoratee.i].join(':')
+                    },
+                    bar (decoratee) {
+                      return ['bar', decoratee.i].join(':')
+                    }
+                  }
+                  return decorators
+                },
+              }
+            },
+          },
+        },
+        'outputs': {
+          decorators: {},
+        }
+      },
+      tickFn ({node}) {
+        if (!node.hasHotInputs()) { return }
+        node.getPort('outputs:decorators')
+          .pushValue(node.getPort('inputs:decorators').shiftValue())
+      },
+    }
+  })
+
+  graph.addWireFromSpec({
+    wireSpec: { src: 'itemGen:item', dest: 'decorator:decoratee' }
+  })
+  graph.addWireFromSpec({
+    wireSpec: { src: 'decorators:decorators', dest: 'decorator:decorators' }
   })
 
   return graph
