@@ -45,26 +45,25 @@ const graphFactory = ({store} = {}) => {
           }
         }
         const fillStyle = node.getPort('inputs:fillStyle').mostRecentValue
-        const imgData = ctx.createImageData(1,1)
-        const setPixel = ({x, y, rgba}) => {
-          for (let i = 0; i < 4; i++) {
-            imgData.data[i] = rgba[i]
-          }
-          ctx.putImageData(imgData, x, y)     
-        }
+        const imgData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height)
         const ts = {y: 0, x: 0}
-        for (let y = 0; y < ctx.canvas.height; y++) {
-          ts.y = y / ctx.canvas.height
+        for (let y = 0; y < imgData.height; y++) {
+          const rowStartIdx = (y * imgData.width * 4)
+          ts.y = y / imgData.height
           const color = chroma(fillStyle).set(
             'lch.c',
             ((ts.y * 100) + 5 * (-1 + Math.random() * 2)),
           )
           const rgba = [...color.rgb(), 255]
-          for (let x = 0; x < ctx.canvas.width; x++) {
-            ts.x = x / ctx.canvas.width
-            setPixel({x, y, rgba})
+          for (let x = 0; x < imgData.width; x++) {
+            const pixelStartIdx = (rowStartIdx + x * 4)
+            ts.x = x / imgData.width
+            for (let i = 0; i < 4; i++) {
+              imgData.data[pixelStartIdx + i] = rgba[i]
+            }
           }
         }
+        ctx.putImageData(imgData, 0, 0)
       },
       ctx: {
         didMountFn ({node}) {
