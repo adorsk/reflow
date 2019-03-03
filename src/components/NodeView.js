@@ -19,9 +19,9 @@ export class NodeView extends React.Component {
   componentDidMount () {
     const { node } = this.props
     if (! node ) { return }
-    this.onNodeChanged = () => {
+    this.onNodeChanged = _.debounce(() => {
       this.setState({nodeVersion: this.state.nodeVersion + 1})
-    }
+    }, 0)
     node.changed.add(this.onNodeChanged)
     if (this.props.afterMount) { this.props.afterMount(this) }
   }
