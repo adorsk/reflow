@@ -19,6 +19,21 @@ export class Packet {
     }
     return this.data
   }
+  set value (v) {
+    if (!this.isData() ) {
+      throw new Error("cannot get value for non-data packet")
+    }
+    this.data = v
+  }
+
+  clone (opts = {}) {
+    return new Packet(Object.assign({
+      timestamp: this.timestamp,
+      type: this.type,
+      data: this.data,
+      ctx: this.ctx,
+    }, opts))
+  }
 }
 
 Packet.Types = {

@@ -44,6 +44,9 @@ export class Wire {
   isHot () { return this.state.get('hot') }
 
   pushPacket (packet) {
+    if (this.behaviors.transform) {
+      packet = this.behaviors.transform({wire: this, packet})
+    }
     this.packets.push(packet)
     this.state.set('hot', true)
   }
