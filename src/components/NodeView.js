@@ -165,7 +165,12 @@ export class NodeView extends React.Component {
                 content="pop it back"
                 onClick={() => node.state.set('useWindowPortal', false)}
               />
-              <WindowPortal windowName={node.id}>{gui}</WindowPortal>
+              <WindowPortal
+                windowName={node.id}
+                onClose={() => node.state.set('useWindowPortal', false)}
+              >
+                {gui}
+              </WindowPortal>
             </div>
           ) : (
             <div>
