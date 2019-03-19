@@ -35,14 +35,18 @@ function workerFn () {
   }
 
   self.addEventListener('message', (evt) => { // eslint-disable-line
-    const { type, payload } = evt.data
+    const { type, payload, key } = evt.data
+    let result
     if (type === 'clearCanvas') {
       clearCanvas()
     } else if (type === 'setCanvas') {
       setCanvas(payload.canvas)
     } else if (type === 'putImageData') {
       putImageData(payload.imageData, payload.x, payload.y)
+    } else if (type === 'getImageBitmap') {
+      result = ctx.canvas.transferToImageBitmap()
     }
+    self.postMessage({type, key, status: 'FULFILLED', result}) // eslint-disable-line
   })
 }
 

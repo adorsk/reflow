@@ -227,7 +227,6 @@ const graphFactory = ({store} = {}) => {
         for (let x = 0; x < width; x += dx) {
           centerPoints.push({x, y})
         }
-        console.log("cps: ", centerPoints)
         const diagLength = 0.65 * height 
         const diagWidth = .1 * dx
         const deltas = {

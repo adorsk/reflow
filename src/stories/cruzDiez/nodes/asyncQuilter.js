@@ -20,18 +20,25 @@ export const nodeSpec = {
     while (inPacketPort.hasPackets()) {
       const inPacket = inPacketPort.shiftPacket()
       if (inPacket.isOpenBracket()) {
+        node.state.set('promises', [])
         node.state.get('quilter').clear()
         continue
       }
       if (inPacket.isData()) {
         const cell = inPacket.value
-        node.state.get('quilter').putImageData(
+        const promise = node.state.get('quilter').putImageData(
           cell.imageData, cell.shape.bRect.x, cell.shape.bRect.y)
+        node.state.get('promises').push(promise)
         continue
       }
       if (inPacket.isCloseBracket()) {
-        // Push canvas
-        node.getPort('outputs:canvas').pushValue(node.state.get('canvas'))
+        Promise.all(node.state.get('promises')).then(() => {
+          node.state.delete('promises')
+          node.state.get('quilter').getImageBitmap().then((imageBitmap) => {
+            node.getPort('outputs:canvas').pushValue(imageBitmap)
+          })
+          //node.getPort('outputs:canvas').pushValue(node.state.get('canvas'))
+        })
       }
     }
   },
@@ -46,9 +53,20 @@ export const nodeSpec = {
         class WorkerQuilter {
           constructor () {
             this.worker = workerFactory()
+            // Hacky way to track requests.
+            this.keyedPromises = {}
+            this.worker.addEventListener('message', (evt) => {
+              const { key, status, result } = evt.data
+              if (this.keyedPromises[key]) {
+                const { resolve, reject } = this.keyedPromises[key]
+                if (status === 'FULFILLED') { resolve(result) }
+                else { reject() }
+              }
+            })
           }
 
           clear () {
+            this.keyedPromises = {}
             this.worker.postMessage({type: 'clearCanvas'})
           }
 
@@ -59,10 +77,27 @@ export const nodeSpec = {
             }, [canvas])
           }
 
-          putImageData (imageData, x, y) {
-            this.worker.postMessage({
-              type: 'putImageData',
-              payload: {imageData, x, y}
+          async putImageData (imageData, x, y) {
+            return new Promise((resolve, reject) => {
+              const key = [x, y].join(':')
+              this.keyedPromises[key] = {resolve, reject}
+              this.worker.postMessage({
+                key,
+                type: 'putImageData',
+                payload: {imageData, x, y}
+              })
+            })
+          }
+
+          async getImageBitmap () {
+            return new Promise((resolve, reject) => {
+              const key = 'getImageBitmap'
+              this.keyedPromises[key] = {resolve, reject}
+              this.worker.postMessage({
+                key,
+                type: 'getImageBitmap',
+                payload: {}
+              })
             })
           }
         }
