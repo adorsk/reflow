@@ -1,6 +1,6 @@
 import React from 'react'
 import _ from 'lodash'
-import { Button, Message } from 'semantic-ui-react'
+import { Card, Button, Message } from 'semantic-ui-react'
 
 import WindowPortal from './WindowPortal.js'
 import PortView from './PortView.js'
@@ -154,34 +154,47 @@ export class NodeView extends React.Component {
     const { node } = this.props
     if (!this.GuiComponent) { return }
     const GuiComponent = this.GuiComponent
-    const gui = (<GuiComponent node={node} />)
+    const renderGui = () => (
+      <div
+        style={{
+          backgroundColor: 'hsl(0, 0%, 50%)',
+        }}
+      >
+        <GuiComponent node={node} />
+      </div>
+    )
     const useWindowPortal = node.state.get('useWindowPortal')
+    const showView = node.state.has('showView') ? node.state.get('showView') : true
     return (
       <div className="view">
-        {
-          (useWindowPortal) ? (
-            <div>
-              <Button
-                content="pop it back"
-                onClick={() => node.state.set('useWindowPortal', false)}
-              />
-              <WindowPortal
-                windowName={node.id}
-                onClose={() => node.state.set('useWindowPortal', false)}
-              >
-                {gui}
-              </WindowPortal>
-            </div>
-          ) : (
-            <div>
-              <Button
-                content="pop it out!"
-                onClick={() => node.state.set('useWindowPortal', true)}
-              />
-              {gui}
-            </div>
-          )
-        }
+        <Card>
+          <Card.Content>
+            <Card.Meta>
+              <Button.Group size="mini" compact>
+                <Button
+                  icon="clone"
+                  onClick={() => node.state.set('useWindowPortal', !useWindowPortal)}
+                />
+                <Button
+                  icon={showView ? 'hide' : 'eye'}
+                  onClick={() => node.state.set('showView', !showView)}
+                />
+              </Button.Group>
+            </Card.Meta>
+            <Card.Description>
+              {
+                (useWindowPortal) ? (
+                  <WindowPortal
+                    windowName={node.id}
+                    onClose={() => node.state.set('useWindowPortal', false)}
+                  >
+                    {renderGui()}
+                  </WindowPortal>
+                ) : ( (showView) ? renderGui() : null )
+              }
+            </Card.Description>
+          </Card.Content>
+        </Card>
       </div>
     )
   }
