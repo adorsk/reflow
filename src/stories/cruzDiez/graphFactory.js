@@ -6,6 +6,7 @@ import Graph from '../../engine/Graph.js'
 import {
   getInputValues,
   NumberInput,
+  createColorPortSpec,
 } from '../../utils/graphFactory-utils.js'
 import { nodeSpec as asyncQuilterNodeSpec } from './nodes/asyncQuilter.js'
 
@@ -202,6 +203,23 @@ const graphFactory = ({store} = {}) => {
       portSpecs: {
         'inputs': {
           image: {},
+          angle: {
+            initialValues: [45],
+            ctx: { getGuiComponent: () => NumberInput },
+          },
+          lineLength: {
+            initialValues: [60],
+            ctx: { getGuiComponent: () => NumberInput },
+          },
+          lineWidth: {
+            initialValues: [1],
+            ctx: { getGuiComponent: () => NumberInput },
+          },
+          spacing: {
+            initialValues: [2],
+            ctx: { getGuiComponent: () => NumberInput },
+          },
+          lineColor: createColorPortSpec({initialValues: ['black']}),
         },
         'outputs': {
           canvas: {},
@@ -220,18 +238,20 @@ const graphFactory = ({store} = {}) => {
         canvas.height = height
         const ctx = canvas.getContext('2d')
         ctx.drawImage(image, 0, 0)
-        const angle = (45 * Math.PI / 180)
-        const dx = width / 10
-        const centerPoints = []
+        const angleDeg = node.getPort('inputs:angle').mostRecentValue
+        const angleRad = (angleDeg * Math.PI / 180)
+        const spacing = node.getPort('inputs:spacing').mostRecentValue
+        const lineWidth = node.getPort('inputs:lineWidth').mostRecentValue
+        const lineLength = node.getPort('inputs:lineLength').mostRecentValue
         const y = height / 2
-        for (let x = 0; x < width; x += dx) {
-          centerPoints.push({x, y})
-        }
-        const diagLength = 0.65 * height 
-        const diagWidth = .1 * dx
+        const dx = spacing + (lineWidth / 2)
         const deltas = {
-          y: (diagLength / 2) * Math.sin(angle), 
-          x: (diagLength / 2) * Math.cos(angle)
+          y: (lineLength / 2) * Math.sin(angleRad), 
+          x: (lineLength / 2) * Math.cos(angleRad)
+        }
+        const centerPoints = []
+        for (let x = (0 - deltas.x); x < (width + deltas.x); x += dx) {
+          centerPoints.push({x, y})
         }
         for (let point of centerPoints) {
           const start = {
@@ -247,8 +267,8 @@ const graphFactory = ({store} = {}) => {
             ['L', end.x, end.y],
           ].map((cmd) => cmd.join(' ')).join(' ')
           const path = new Path2D(d)
-          ctx.strokeStyle = 'black'
-          ctx.strokeWidth = diagWidth
+          ctx.strokeStyle = node.getPort('inputs:lineColor').mostRecentValue
+          ctx.lineWidth = lineWidth
           ctx.stroke(path)
         }
         node.getPort('outputs:canvas').pushValue(canvas)

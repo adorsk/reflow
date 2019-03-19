@@ -40,6 +40,24 @@ export const ColorIcon = (props) => {
   )
 }
 
+export const createColorPortSpec = (opts) => {
+  const portSpec = {
+    initialValues: (opts.initialValues || ['blue']),
+    ctx: {
+      getGuiComponent: () => ColorInput,
+      renderPacketSummary: ({packet}) => {
+        return (packet) ? (<ColorIcon color={packet.data} />) : null
+      },
+      renderPacketDetail: ({packet}) => {
+        return (packet) ? (
+          <span>{packet.data} <ColorIcon color={packet.data} /></span>
+        ) : null
+      }
+    }
+  }
+  return portSpec
+}
+
 export class InputsError extends Error {}
 
 export const getInputValues = ({node, inputKeys}) => {
