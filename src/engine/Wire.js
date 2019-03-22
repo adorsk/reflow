@@ -15,7 +15,7 @@ export class Wire {
     this.src = opts.src
     this.dest = opts.dest
     this.behaviors = {
-      drain: 'drain',
+      drain: 'debouncedDrain',
       ...opts.behaviors,
     }
     this.changed = new signals.Signal()

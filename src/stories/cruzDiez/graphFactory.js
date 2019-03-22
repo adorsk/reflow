@@ -18,9 +18,31 @@ const graphFactory = ({store} = {}) => {
 
   graph.addNodeFromSpec({
     nodeSpec: {
+      id: 'kick',
+      portSpecs: {
+        'inputs': {
+          kick: {
+            initialValues: [],
+            ctx: { getGuiComponent: () => NumberInput }
+          },
+        },
+        'outputs': {
+          kick: {},
+        },
+      },
+      tickFn ({node}) {
+        if (! node.hasHotInputs()) { return }
+        node.getPort('outputs:kick').pushValue(new Date())
+      },
+    }
+  })
+
+  graph.addNodeFromSpec({
+    nodeSpec: {
       id: 'grid',
       portSpecs: {
         'inputs': {
+          kick: {},
           x0: {
             initialValues: [0],
             ctx: { getGuiComponent: () => NumberInput }
@@ -54,7 +76,7 @@ const graphFactory = ({store} = {}) => {
         if (! node.hasHotInputs()) { return }
         const inputValues = getInputValues({
           node,
-          inputKeys: Object.keys(node.getInputPorts())
+          inputKeys: Object.keys(node.getInputPorts()).filter(key => key !== 'kick')
         })
         const { x0, x1, dx, y0, y1, dy } = inputValues
         const cells = []
@@ -154,43 +176,46 @@ const graphFactory = ({store} = {}) => {
     nodeSpec: {
       id: 'asyncFn',
       portSpecs: {
-        'outputs': {
-          fn: {
-            behaviors: {
-              constant: {
-                valueFn: () => {
-                  async function fn (cell) {
-                    const { shape } = cell
-                    const imageData = new ImageData(
-                      shape.bRect.width,
-                      shape.bRect.height
-                    )
-                    const color = ((cell.idx % 2) === 0) ? 'blue' : 'red'
-                    const rgba = chroma(color).rgba()
-                    rgba[3] = ~~(rgba[3] * 255)
-                    for (let y = 0; y < imageData.height; y++) {
-                      const rowStartIdx = y * imageData.width * 4
-                      for (let x = 0; x < imageData.width; x++) {
-                        const pixelStartIdx = rowStartIdx + x * 4
-                        for (let i = 0; i < 4; i++) {
-                          imageData.data[pixelStartIdx + i] = rgba[i]
-                        }
-                      }
-                    }
-                    const decoratedCell = {...cell, imageData}
-                    return new Promise((resolve, reject) => {
-                      setTimeout(
-                        () => resolve(decoratedCell),
-                        ~~(500 + 500 * Math.random())
-                      )
-                    })
-                  }
-                  return fn
-                },
-              }
-            },
-          },
+        'inputs': {
+          color1: createColorPortSpec({initialValues: ['red']}),
+          color2: createColorPortSpec({initialValues: ['blue']}),
         },
+        'outputs': {
+          fn: {},
+        },
+      },
+      tickFn: ({node}) => {
+        if (!node.hasHotInputs()) { return }
+        const color1 = node.getPort('inputs:color1').mostRecentValue
+        const color2 = node.getPort('inputs:color2').mostRecentValue
+
+        async function fn (cell) {
+          const { shape } = cell
+          const imageData = new ImageData(
+            shape.bRect.width,
+            shape.bRect.height
+          )
+          const color = ((cell.idx % 2) === 0) ? color1 : color2
+          const rgba = chroma(color).rgba()
+          rgba[3] = ~~(rgba[3] * 255)
+          for (let y = 0; y < imageData.height; y++) {
+            const rowStartIdx = y * imageData.width * 4
+            for (let x = 0; x < imageData.width; x++) {
+              const pixelStartIdx = rowStartIdx + x * 4
+              for (let i = 0; i < 4; i++) {
+                imageData.data[pixelStartIdx + i] = rgba[i]
+              }
+            }
+          }
+          const decoratedCell = {...cell, imageData}
+          return new Promise((resolve, reject) => {
+            setTimeout(
+              () => resolve(decoratedCell),
+              ~~(500 + 500 * Math.random())
+            )
+          })
+        }
+        node.getPort('outputs:fn').pushValue(fn)
       },
     },
   })
@@ -297,6 +322,9 @@ const graphFactory = ({store} = {}) => {
   })
 
   graph.addWireFromSpec({
+    wireSpec: { src: 'kick:kick', dest: 'grid:kick' }
+  })
+  graph.addWireFromSpec({
     wireSpec: { src: 'grid:cells', dest: 'splitter:array' }
   })
   graph.addWireFromSpec({
@@ -304,6 +332,9 @@ const graphFactory = ({store} = {}) => {
   })
   graph.addWireFromSpec({
     wireSpec: { src: 'asyncFn:fn', dest: 'asyncMap:fn' }
+  })
+  graph.addWireFromSpec({
+    wireSpec: { src: 'asyncFn:fn', dest: 'kick:kick' }
   })
   graph.addWireFromSpec({
     wireSpec: { src: 'asyncMap:packet', dest: 'asyncQuilter:packet' }
