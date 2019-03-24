@@ -55,13 +55,13 @@ describe('Graph', () => {
     })
   })
 
-  describe('drainPortValues', () => {
+  describe('drainPortPackets', () => {
     const wireFactory = ({drainBehavior}) => {
-      const values = []
+      const packets = []
       return {
         behaviors: { drain: drainBehavior },
-        values,
-        pushValue: values.push.bind(values),
+        packets,
+        pushPacket: packets.push.bind(packets),
       }
     }
 
@@ -73,29 +73,29 @@ describe('Graph', () => {
     it('pushes to wires that come after debouncedDrain wires', () => {
       const debounceWire = wireFactory({drainBehavior: 'debouncedDrain'})
       const copyWire = wireFactory({drainBehavior: 'copy'})
-      const port = { values: [1] }
-      graph.drainPortValues({port, wires: [debounceWire, copyWire]})
-      expect(debounceWire.values).toEqual([1])
-      expect(copyWire.values).toEqual([1])
-      expect(port.values).toEqual([])
+      const port = { packets: [1] }
+      graph.drainPortPackets({port, wires: [debounceWire, copyWire]})
+      expect(debounceWire.packets).toEqual([1])
+      expect(copyWire.packets).toEqual([1])
+      expect(port.packets).toEqual([])
     })
 
     it('does not push to wires after a drain wire', () => {
       const drainWire = wireFactory({drainBehavior: 'drain'})
       const copyWire = wireFactory({drainBehavior: 'copy'})
-      const port = { values: [1] }
-      graph.drainPortValues({port, wires: [drainWire, copyWire]})
-      expect(drainWire.values).toEqual([1])
-      expect(copyWire.values).toEqual([])
-      expect(port.values).toEqual([])
+      const port = { packets: [1] }
+      graph.drainPortPackets({port, wires: [drainWire, copyWire]})
+      expect(drainWire.packets).toEqual([1])
+      expect(copyWire.packets).toEqual([])
+      expect(port.packets).toEqual([])
     })
 
     it('does not drain if there were no draining wires', () => {
       const copyWire = wireFactory({drainBehavior: 'copy'})
-      const port = { values: [1] }
-      graph.drainPortValues({port, wires: [copyWire]})
-      expect(copyWire.values).toEqual([1])
-      expect(port.values).toEqual([1])
+      const port = { packets: [1] }
+      graph.drainPortPackets({port, wires: [copyWire]})
+      expect(copyWire.packets).toEqual([1])
+      expect(port.packets).toEqual([1])
     })
   })
 })
