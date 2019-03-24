@@ -188,6 +188,15 @@ const graphFactory = ({store} = {}) => {
         if (!node.hasHotInputs()) { return }
         const color1 = node.getPort('inputs:color1').mostRecentValue
         const color2 = node.getPort('inputs:color2').mostRecentValue
+          /*
+        const colorFn = ({cell}) => {
+          return ((cell.idx % 2) === 0) ? color1 : color2
+        }
+        */
+        const scale = chroma.scale([color1, color2])
+        const colorFn = ({cell}) => {
+          return scale((cell.idx % 100) / 100).hex()
+        }
 
         async function fn (cell) {
           const { shape } = cell
@@ -195,7 +204,7 @@ const graphFactory = ({store} = {}) => {
             shape.bRect.width,
             shape.bRect.height
           )
-          const color = ((cell.idx % 2) === 0) ? color1 : color2
+          const color = colorFn({cell})
           const rgba = chroma(color).rgba()
           rgba[3] = ~~(rgba[3] * 255)
           for (let y = 0; y < imageData.height; y++) {
