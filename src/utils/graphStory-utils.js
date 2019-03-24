@@ -47,19 +47,19 @@ export const memoizedCreateStores = _.memoize(
 
 
 export class PersistentGraphView extends React.Component {
-  state = { engineStore: null, viewStore: null}
+  state = { graph: null, viewStore: null}
 
   componentDidMount() {
-    const storesPromise = memoizedCreateStores({namespace: this.props.namespace})
-    storesPromise.then(({viewStore, engineStore}) => {
-      this.setState({viewStore, engineStore })
-    })
+    (async () => {
+      const stores = await this.props.storesFactory()
+      const graph = await this.props.graphFactory({store: stores.engineStore})
+      this.setState({graph, viewStore: stores.viewStore})
+    })()
   }
 
   render() {
-    const { viewStore, engineStore } = this.state
-    if (!viewStore || !engineStore) { return null }
-    const graph = this.props.graphFactory({store: engineStore})
+    const { graph, viewStore} = this.state
+    if (!graph || !viewStore) { return null }
     return (<GraphView store={viewStore} graph={graph} />)
   }
 }
@@ -69,7 +69,7 @@ export function addGraphStory ({namespace, graphFactory, module}) {
     return (
       <PersistentGraphView
         graphFactory={graphFactory}
-        namespace={namespace}
+        storesFactory={() => memoizedCreateStores({namespace})}
       />
     )
   })

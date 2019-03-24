@@ -1,3 +1,4 @@
+import _ from 'lodash'
 import Graph from '../Graph.js'
 import Node from '../Node.js'
 
@@ -96,6 +97,12 @@ describe('Graph', () => {
       graph.drainPortPackets({port, wires: [copyWire]})
       expect(copyWire.packets).toEqual([1])
       expect(port.packets).toEqual([1])
+    })
+  })
+
+  describe('Graph.fromSpec', () => {
+    it.skip('creates expected graph', () => {
+      this.fail('flesh this out eventually')
     })
   })
 })

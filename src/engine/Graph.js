@@ -170,4 +170,17 @@ export class Graph {
   }
 }
 
+Graph.fromSpec = async ({graphSpec = {}, store}) => {
+  const graph = new Graph({id: graphSpec.id, store})
+  for (let nodeSpec of _.values(graphSpec.nodeSpecs)) {
+    if (typeof nodeSpec === 'function') { nodeSpec = await nodeSpec() }
+    graph.addNodeFromSpec({nodeSpec})
+  }
+  for (let wireSpec of _.values(graphSpec.wireSpecs)) {
+    if (typeof wireSpec === 'function') { wireSpec = await wireSpec() }
+    graph.addWireFromSpec({wireSpec})
+  }
+  return graph
+}
+
 export default Graph
