@@ -1,6 +1,6 @@
 import React from 'react'
 import _ from 'lodash'
-import { Card, Button, Message } from 'semantic-ui-react'
+import { Button, Card, Message, Popup } from 'semantic-ui-react'
 
 import WindowPortal from './WindowPortal.js'
 import PortView from './PortView.js'
@@ -8,7 +8,10 @@ import PortView from './PortView.js'
 export class NodeView extends React.Component {
   constructor (props) {
     super(props)
-    this.state = { nodeVersion: 0 }
+    this.state = {
+      nodeVersion: 0,
+      srcPopupIsVisible: false,
+    }
     this.GuiComponent = this.getGuiComponent({node: props.node})
     this.portViews = {
       inputs: {},
@@ -54,7 +57,7 @@ export class NodeView extends React.Component {
         ref={this.props.rootRef}
         style={style}
       >
-        {this.renderLabel()}
+        {this.renderTopBar()}
         {this.renderPorts()}
         {this.renderErrors()}
         {this.renderView()}
@@ -63,25 +66,71 @@ export class NodeView extends React.Component {
     )
   }
 
-  renderLabel () {
+  renderTopBar () {
     const { node } = this.props
     const label = node.label || node.id
-    return (
-      <label
-        ref={this.props.labelRef}
+    const topBar = (
+      <div
         style={{
-          display: 'block',
-          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'row',
+          padding: '.25em',
           background: 'gray',
           width: '100%',
           borderBottom: 'thin solid gray',
-          cursor: 'pointer',
           borderRadius: '5px 5px 0 0',
         }}
       >
-        {label}
-      </label>
-  )
+        <label
+          style={{
+            alignSelf: 'stretch',
+            cursor: 'grab',
+            flex: '1 0 auto',
+            textAlign: 'center',
+          }}
+          ref={this.props.labelRef}
+        >
+          {label}
+        </label>
+        <span style={{alignSelf: 'end'}}>
+          {this.renderSrcEditorFrob({node})}
+        </span> 
+      </div>
+    )
+    return topBar
+  }
+
+  renderSrcEditorFrob ({node}) {
+    const trigger = (
+      <Button
+        size='mini'
+        compact={true}
+        onClick={() => {
+          this.setState({srcPopupIsVisible: !this.state.srcPopupIsVisible})
+        }}
+        content='src'
+      />
+    )
+    const frob = (
+      <Popup
+        trigger={trigger}
+        content={this.renderSrcEditor({node})}
+        on={null}
+        open={this.state.srcPopupIsVisible}
+        position='right center'
+        style={{
+          maxHeight: '300px',
+          overflow: 'auto',
+        }}
+      />
+    )
+    return frob
+  }
+
+  renderSrcEditor ({node}) {
+    return (
+      <div>srcEditor</div>
+    )
   }
 
   renderPorts () {

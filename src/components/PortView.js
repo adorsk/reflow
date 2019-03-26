@@ -10,7 +10,7 @@ export class PortView extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
-      popupIsOpen: false,
+      popupIsVisible: false,
       portVersion: 0,
     }
     this.handleRef = React.createRef()
