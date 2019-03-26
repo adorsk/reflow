@@ -2,6 +2,7 @@ import React from 'react'
 import _ from 'lodash'
 import { Button, Card, Message, Popup } from 'semantic-ui-react'
 
+import CodeEditor from './CodeEditor.js'
 import WindowPortal from './WindowPortal.js'
 import PortView from './PortView.js'
 
@@ -117,7 +118,7 @@ export class NodeView extends React.Component {
         content={this.renderSrcEditor({node})}
         on={null}
         open={this.state.srcPopupIsVisible}
-        position='right center'
+        position='bottom left'
         style={{
           maxHeight: '300px',
           overflow: 'auto',
@@ -129,7 +130,16 @@ export class NodeView extends React.Component {
 
   renderSrcEditor ({node}) {
     return (
-      <div>srcEditor</div>
+      <CodeEditor
+        style={{
+          width: '200px',
+          height: '200px',
+        }}
+        defaultValue={node.srcCode || ''}
+        onSave={({code}) => {
+          this.props.onChangeSrcCode({node, code})
+        }}
+      />
     )
   }
 

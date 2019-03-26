@@ -4,17 +4,21 @@ import _ from 'lodash'
 import DragContainer from './DragContainer.js'
 import { DraggableNodeView } from './NodeView.js'
 import WireView from './WireView.js'
-import ObservableMapStore from '../engine/ObservableMapStore.js'
+import Transformer from '../utils/Transformer.js'
 
 
 class GraphView extends React.Component {
   constructor (props) {
     super(props)
+    this.state = {
+      graphVersion: 0,
+    }
     this.nodeViews = {}
     this.wireViews = {}
     this._wiresFromNode = {}
     this._wiresToNode = {}
     this.wiresContainerRef = React.createRef()
+    this.transformer = new Transformer()
   }
 
   render () {
@@ -63,7 +67,7 @@ class GraphView extends React.Component {
   }
 
   renderDraggableNodeView (node) {
-    const { store } = this.props
+    const { graph, store } = this.props
     const posKey = `${node.id}-pos`
     return (
       <DraggableNodeView
@@ -79,6 +83,12 @@ class GraphView extends React.Component {
         beforeUnmount={() => { delete this.nodeViews[node.id] }}
         onDragEnd={({pos}) => {
           store.set({key: posKey, value: pos})
+        }}
+        onChangeSrcCode={async ({node, code}) => {
+          const transpiledCode = this.transformer.transform(code).code
+          const fn = eval(transpiledCode) // eslint-disable-line
+          const nodeSpec = await fn()
+          graph.replaceNodeFromSpec({node, nodeSpec})
         }}
       />
     )
@@ -130,11 +140,22 @@ class GraphView extends React.Component {
   }
 
   componentDidMount () {
+    const { graph } = this.props
+    if (! graph ) { return }
+    this.onGraphChanged = _.debounce(() => {
+      this.setState({graphVersion: this.state.graphVersion + 1})
+    }, 0)
+    graph.changed.add(this.onGraphChanged)
     this.updateWireViews()
   }
 
   componentWillUnmount () {
-    this.props.graph.unmount()
+    const { graph } = this.props
+    if (! graph) { return }
+    if (this.onGraphChange) {
+      graph.changed.remove(this.onGraphChanged)
+    }
+    graph.unmount()
   }
 
   componentDidUpdate () {

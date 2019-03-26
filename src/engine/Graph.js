@@ -6,6 +6,7 @@ import Node from './Node.js'
 import Wire from './Wire.js'
 import ObservableMapStore from './ObservableMapStore.js'
 
+
 export class Graph {
   constructor ({id, store, state} = {}) {
     this.id = id || _.uniqueId('graph-')
@@ -167,6 +168,12 @@ export class Graph {
       },
       2
     )
+  }
+
+  replaceNodeFromSpec ({node, nodeSpec}) {
+    console.log("n: ", node, "ns: ", nodeSpec)
+    this.removeNode({nodeId: node.id})
+    this.addNodeFromSpec({nodeSpec})
   }
 }
 

@@ -65,7 +65,7 @@ export class PortView extends React.Component {
           content={this.renderPopupContent({port})}
           on={null}
           open={this.state.popupIsVisible}
-          position={`${leftRight} center`}
+          position={`bottom ${leftRight}`}
           style={{
             maxHeight: '300px',
             overflow: 'auto',

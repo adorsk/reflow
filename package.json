@@ -5,9 +5,11 @@
   "dependencies": {
     "chroma-js": "^2.0.3",
     "classnames": "^2.2.6",
+    "codemirror": "^5.45.0",
     "interactjs": "^1.3.4",
     "mobx": "^5.9.0",
     "pouchdb-browser": "^7.0.0",
+    "prop-types": "^15.7.2",
     "react": "^16.7.0",
     "react-color": "^2.17.0",
     "react-dom": "^16.7.0",
