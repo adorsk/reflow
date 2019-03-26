@@ -7,12 +7,15 @@ import CodeMirror from './CodeMirror'
 class CodeEditor extends React.Component {
   constructor (props) {
     super(props)
+    this.state = {
+      errorFromSave: null,
+    }
     this.cmRef = React.createRef()
     this.cm = null
   }
 
   render () {
-    return (
+    const codeMirror = (
       <CodeMirror
         ref={this.cmRef}
         defaultValue={this.props.defaultValue}
@@ -30,15 +33,35 @@ class CodeEditor extends React.Component {
         }}
       />
     )
+    const errors = []
+    if (this.state.errorFromSave) {
+      errors.push(this.state.errorFromSave)
+    }
+    return (
+      <div>
+        {
+          errors.length > 0 ? (
+            <div>{'' + errors}</div>
+          ) : null
+        }
+        {codeMirror}
+      </div>
+    )
   }
 
   componentDidMount () {
     this.cm = this.cmRef.current.getCodeMirror()
   }
 
-  onSave () {
+  async onSave () {
+    this.setState({errorFromSave: null})
     if (this.props.onSave) {
-      this.props.onSave({code: this.cm.getValue()})
+      try {
+        await this.props.onSave({code: this.cm.getValue()})
+      } catch (err) {
+        console.error(err)
+        this.setState({errorFromSave: 'Could not save: ' + err})
+      }
     }
   }
 }

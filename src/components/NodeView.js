@@ -6,6 +6,8 @@ import CodeEditor from './CodeEditor.js'
 import WindowPortal from './WindowPortal.js'
 import PortView from './PortView.js'
 
+import { EvaluationError, CompilationError } from '../utils/Errors.js'
+
 export class NodeView extends React.Component {
   constructor (props) {
     super(props)
@@ -136,8 +138,8 @@ export class NodeView extends React.Component {
           height: '200px',
         }}
         defaultValue={node.srcCode || ''}
-        onSave={({code}) => {
-          this.props.onChangeSrcCode({node, code})
+        onSave={async ({code}) => {
+          await this.props.onChangeSrcCode({node, code})
         }}
       />
     )

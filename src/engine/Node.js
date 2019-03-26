@@ -14,6 +14,7 @@ export class Node {
       quenchHotInputsAfterTick: true,
     }, opts.behaviors)
     this.ctx = opts.ctx || {}
+    this.srcCode = opts.srcCode || ''
     this.changed = new signals.Signal()
     this.tickFn = opts.tickFn
     this.setState(opts.state || new Map())

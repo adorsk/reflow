@@ -6,6 +6,8 @@ import { DraggableNodeView } from './NodeView.js'
 import WireView from './WireView.js'
 import Transformer from '../utils/Transformer.js'
 
+import { EvaluationError, CompilationError } from '../utils/Errors.js'
+
 
 class GraphView extends React.Component {
   constructor (props) {
@@ -85,9 +87,19 @@ class GraphView extends React.Component {
           store.set({key: posKey, value: pos})
         }}
         onChangeSrcCode={async ({node, code}) => {
-          const transpiledCode = this.transformer.transform(code).code
-          const fn = eval(transpiledCode) // eslint-disable-line
-          const nodeSpec = await fn()
+          let nodeSpec, fn
+          try {
+            const transpiledCode = this.transformer.transform(code).code
+            fn = eval(transpiledCode) // eslint-disable-line
+          } catch (err) {
+            throw new CompilationError(err)
+          }
+          try {
+            nodeSpec = await fn()
+          } catch (err) {
+            throw new EvaluationError(err)
+          }
+          nodeSpec.srcCode = code
           graph.replaceNodeFromSpec({node, nodeSpec})
         }}
       />
