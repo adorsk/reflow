@@ -171,7 +171,6 @@ export class Graph {
   }
 
   replaceNodeFromSpec ({node, nodeSpec}) {
-    console.log("n: ", node, "ns: ", nodeSpec)
     this.removeNode({nodeId: node.id})
     this.addNodeFromSpec({nodeSpec})
   }

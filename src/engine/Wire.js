@@ -14,6 +14,7 @@ export class Wire {
     this.id = opts.id
     this.src = opts.src
     this.dest = opts.dest
+    this.srcCode = opts.srcCode
     this.behaviors = {
       drain: 'debouncedDrain',
       ...opts.behaviors,
@@ -84,7 +85,8 @@ export class Wire {
       terminals[srcDest] = {node, port}
     }
     const wire = new Wire({
-      id: Wire.idFromTerminals({terminals}),
+      ...wireSpec,
+      id: wireSpec.id || Wire.idFromTerminals({terminals}),
       ...terminals,
       behaviors: wireSpec.behaviors,
     })
