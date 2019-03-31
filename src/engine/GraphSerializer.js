@@ -20,6 +20,18 @@ export class GraphSerializer {
     }
     return graphSpec
   }
+
+  serializeGraphState ({graph}) {
+    const serializedState = {
+      serializedNodeStates: {},
+    }
+    for (let node of _.values(graph.getNodes())) {
+      const serializeStateFn = _.get(node, ['ctx', 'serializeState'])
+      if (! serializeStateFn) { continue }
+      serializedState.serializedNodeStates[node.id] = serializeStateFn({node})
+    }
+    return serializedState
+  }
 }
 
 export default GraphSerializer
