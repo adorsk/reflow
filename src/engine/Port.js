@@ -10,7 +10,8 @@ const PACKETS_KEY = 'PACKETS'
 
 class Port {
   constructor (opts = {}) {
-    this.id = opts.id
+    this.id = opts.id // @TODO: should become label?
+    this.key = opts.key
     this.behaviors = opts.behaviors || {}
     this.ctx = opts.ctx
     this.changed = new signals.Signal()
@@ -19,14 +20,14 @@ class Port {
     this.setState(opts.state || new Map())
     this.ioType = opts.ioType
     this.wires = []
-    this.init()
+    this.init({packets: opts.packets})
   }
 
-  init() {
+  init ({packets}) {
     if (_.isUndefined(this.state.get('initialized'))) {
       this.packets = observable([], {deep: false})
-      for (let value of (this.initialValues || [])) {
-        this.pushValue(value)
+      for (let packet of (packets || [])) {
+        this.pushPacket(packet)
       }
       this.state.set('initialized', true)
     }

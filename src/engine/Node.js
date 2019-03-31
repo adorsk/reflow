@@ -5,6 +5,7 @@ import signals from 'signals'
 import Port from './Port.js'
 
 const DISPOSER_KEY = Symbol('disposer_key')
+const PORT_STATES_KEY = ':PORT_STATES:'
 
 export class Node {
   constructor (opts = {}) {
@@ -42,6 +43,9 @@ export class Node {
   setState (state) {
     if (this[DISPOSER_KEY]) { this[DISPOSER_KEY]() } // unbind prev state
     state = (state.observe) ? state : observable.map(state)
+    if (! state.has(PORT_STATES_KEY)) {
+      state.set(PORT_STATES_KEY, new Map())
+    }
     this[DISPOSER_KEY] = state.observe(() => {
       this.changed.dispatch({type: 'state'})
     })
@@ -195,17 +199,19 @@ export class Node {
 Node.fromSpec = (spec) => {
   const { portSpecs, ...nodeOpts } = spec
   const node = new Node(nodeOpts)
+  const portStates = node.state.get(PORT_STATES_KEY)
   _.each(portSpecs, (portSpecsForIoType, ioType) => {
     _.each(portSpecsForIoType, (portSpec, portId) => {
       const portKey = [ioType, portId].join(':')
-      let portState = node.state.get(portKey)
+      let portState = portStates.get(portKey)
       if (_.isUndefined(portState)) {
         portState = new Map()
-        node.state.set(portKey, portState)
+        portStates.set(portKey, portState)
       }
       node.addPort({
         port: new Port({
           id: portId,
+          key: portKey,
           state: portState,
           ioType,
           node,

@@ -42,4 +42,8 @@ Packet.Types = {
   CLOSE: Symbol('OPEN'),
 }
 
+Packet.createDataPacket = ({data}) => {
+  return new Packet({type: Packet.Types.DATA, data})
+}
+
 export default Packet

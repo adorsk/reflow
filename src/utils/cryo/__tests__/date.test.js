@@ -1,30 +1,21 @@
-var mocha = require('mocha');
-var assert = require('chai').assert;
-
-var Cryo = require('../lib/cryo');
+import Cryo from '../cryo.js'
 
 describe('Date', function() {
-
-
   it('should hydrate a date', function() {
-    var original = new Date();
-    var stringified = Cryo.stringify(original);
-    var hydrated = Cryo.parse(stringified);
-
-    assert.typeOf(hydrated, 'date');
-    assert.strictEqual(hydrated.getTime(), original.getTime());
+    const original = new Date()
+    const stringified = Cryo.stringify(original)
+    const hydrated = Cryo.parse(stringified)
+    expect(hydrated instanceof Date).toBe(true)
+    expect(hydrated.getTime()).toEqual(original.getTime())
   });
 
   it('should hydrate a date that has properties', function() {
-    var original = new Date();
-    original.attached = 'some property';
-    var stringified = Cryo.stringify(original);
-    var hydrated = Cryo.parse(stringified);
-
-    assert.typeOf(hydrated, 'date');
-    assert.strictEqual(hydrated.getTime(), original.getTime());
-    assert.strictEqual(hydrated.attached, original.attached);
-  });
-
-
-});
+    const original = new Date()
+    original.attached = 'some property'
+    const stringified = Cryo.stringify(original)
+    const hydrated = Cryo.parse(stringified)
+    expect(hydrated instanceof Date).toBe(true)
+    expect(hydrated.getTime()).toEqual(original.getTime())
+    expect(hydrated.attached).toEqual(original.attached)
+  })
+})

@@ -1,5 +1,6 @@
 import Graph from '../Graph.js'
 import GraphSerializer from '../GraphSerializer.js'
+import Packet from '../Packet.js'
 
 describe('GraphSerializer', () => {
 
@@ -74,8 +75,23 @@ describe('GraphSerializer', () => {
   describe('serializeState', () => {
     it('returns expected serialization', () => {
       const graph = new Graph()
+      const packet1 = Packet.createDataPacket({
+        timestamp: 1,
+        data: 'packet1'
+      })
+      const packet2 = Packet.createDataPacket({
+        timestamp: 2,
+        data: 'packet2'
+      })
       graph.addNodeFromSpec({nodeSpec: {
         id: 'node1',
+        portSpecs: {
+          inputs: {
+            'in1': {
+              packets: [packet1]
+            }
+          },
+        },
         ctx: {
           serializeState ({node}) {
             return 'node1.state'
@@ -84,6 +100,13 @@ describe('GraphSerializer', () => {
       }})
       graph.addNodeFromSpec({nodeSpec: {
         id: 'node2',
+        portSpecs: {
+          inputs: {
+            'in1': {
+              packets: [packet2]
+            }
+          },
+        },
         ctx: {
           serializeState ({node}) {
             return 'node2.state'
@@ -94,8 +117,36 @@ describe('GraphSerializer', () => {
       const serializedState = serializer.serializeGraphState({graph})
       const expectedSerializedState = {
         serializedNodeStates: {
-          'node1': 'node1.state',
-          'node2': 'node2.state',
+          'node1': {
+            serializedState: 'node1.state',
+            serializedPortStates: {
+              'inputs:in1': {
+                serializedState: {
+                  serializedPackets: [{
+                    timestamp: packet1.timestamp,
+                    data: packet1.data,
+                    type: packet1.type,
+                    ctx: packet1.ctx,
+                  }],
+                },
+              },
+            },
+          },
+          'node2': {
+            serializedState: 'node2.state',
+            serializedPortStates: {
+              'inputs:in1': {
+                serializedState: {
+                  serializedPackets: [{
+                    timestamp: packet2.timestamp,
+                    data: packet2.data,
+                    type: packet2.type,
+                    ctx: packet2.ctx,
+                  }],
+                },
+              },
+            },
+          }
         }
       }
       expect(serializedState).toEqual(expectedSerializedState)

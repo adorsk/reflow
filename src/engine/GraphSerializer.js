@@ -26,11 +26,53 @@ export class GraphSerializer {
       serializedNodeStates: {},
     }
     for (let node of _.values(graph.getNodes())) {
-      const serializeStateFn = _.get(node, ['ctx', 'serializeState'])
-      if (! serializeStateFn) { continue }
-      serializedState.serializedNodeStates[node.id] = serializeStateFn({node})
+      serializedState.serializedNodeStates[node.id] = (
+        this.serializeNodeState({node}))
     }
     return serializedState
+  }
+
+  serializeNodeState ({node}) {
+    const serializeStateFn = _.get(node, ['ctx', 'serializeState'])
+    const serializedState = (
+      (serializeStateFn) ? serializeStateFn({node}) : {}
+    )
+    const serializedPortStates = {}
+    for (let port of _.values(node.getPorts())) {
+      serializedPortStates[port.key] = this.serializePortState({port})
+    }
+    const serializedNodeState = {
+      serializedState,
+      serializedPortStates,
+    }
+    return serializedNodeState
+  }
+
+  serializePortState ({port}) {
+    const serializedPortState = {
+      serializedState: {
+        serializedPackets: _.map(port.packets, (packet) => {
+          return this.serializePacket({packet})
+        }),
+      }
+    }
+    return serializedPortState
+  }
+
+  serializePacket ({packet}) {
+    const serializedPacket = {
+      timestamp: packet.timestamp,
+      type: packet.type,
+    }
+    const serializeCtxFn = _.get(packet, ['ctx', 'serializeCtx'])
+    serializedPacket.ctx = (
+      (serializeCtxFn) ? serializeCtxFn({packet}) : packet.ctx
+    )
+    const serializeDataFn = _.get(packet, ['ctx', 'serializeData'])
+    serializedPacket.data = (
+      (serializeDataFn) ? serializeDataFn({packet}) : packet.data
+    )
+    return serializedPacket
   }
 }
 
