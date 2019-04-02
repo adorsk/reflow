@@ -6,6 +6,7 @@ import Node from './Node.js'
 import Wire from './Wire.js'
 import ObservableMapStore from './ObservableMapStore.js'
 
+const NODE_STATES_KEY = ':NODE_STATES:'
 
 export class Graph {
   constructor ({id, store, state} = {}) {
@@ -30,6 +31,9 @@ export class Graph {
 
   setState (state) {
     this.state = state
+    if (! state.has(NODE_STATES_KEY)) {
+      state.set(NODE_STATES_KEY, new Map())
+    }
   }
 
   onChanged (evt) {
@@ -98,9 +102,13 @@ export class Graph {
   getWires () { return this.wires }
 
   addNodeFromSpec ({nodeSpec, opts}) {
+    const nodeStates = this.state.get(NODE_STATES_KEY)
+    if (! nodeStates.has(nodeSpec.id)) {
+      nodeStates.set(nodeSpec.id, new Map())
+    }
     const node = Node.fromSpec({
       ...nodeSpec,
-      state: this.store.getOrCreate({key: nodeSpec.id}),
+      state: nodeStates.get(nodeSpec.id),
     })
     this.addNode(node, opts)
     return node
