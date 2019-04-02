@@ -1,3 +1,5 @@
+import _ from 'lodash'
+
 import Node from '../Node.js'
 import Port from '../Port.js'
 
@@ -7,6 +9,16 @@ describe('Node', () => {
   beforeEach(() => {
     jest.useFakeTimers()
   })
+
+  const genBasicNode = () => {
+    const node = Node.fromSpec({
+      portSpecs: {
+        inputs: {'in1': {}},
+        outputs: {'out1': {}},
+      }
+    })
+    return node
+  }
 
   describe('constructor', () => {
     it('creates a node', () => {
@@ -57,6 +69,39 @@ describe('Node', () => {
       node.addPort({port: outPort, ioType: 'outputs'})
       expect(node.getPort('inputs:in')).toBe(inPort)
       expect(node.getPort('outputs:out')).toBe(outPort)
+    })
+  })
+
+  describe('serializeState', () => {
+    it('copies values for all normal keys', () => {
+      const node = genBasicNode()
+      node.state.set('pie', 'cherry')
+      node.state.set('animal', 'stoat')
+      const serializedState = node.serializeState()
+      expect(serializedState['pie']).toEqual('cherry')
+      expect(serializedState['animal']).toEqual('stoat')
+    })
+
+    it('handles nested portStates', () => {
+      const node = genBasicNode()
+      node.serializePortStates = () => 'mockSerializedPortStates'
+      const serializedState = node.serializeState()
+      expect(serializedState[node.SYMBOLS.PORT_STATES]).toEqual(
+        'mockSerializedPortStates')
+    })
+  })
+
+  describe('serializePortStates', () => {
+    it('serializes portStates', () => {
+      const node = genBasicNode()
+      const expectedSerializedPortStates = {}
+      for (let port of _.values(node.getPorts())) {
+        const mockSerializedPortState = 'mock:' + port.key
+        port.serializeState = () => mockSerializedPortState
+        expectedSerializedPortStates[port.key] = mockSerializedPortState
+      }
+      const actualSerializedPortStates = node.serializePortStates()
+      expect(actualSerializedPortStates).toEqual(expectedSerializedPortStates)
     })
   })
 })

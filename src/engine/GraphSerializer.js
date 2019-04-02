@@ -59,20 +59,7 @@ export class GraphSerializer {
     return serializedPortState
   }
 
-  serializePacket ({packet}) {
-    const serializedPacket = {
-      timestamp: packet.timestamp,
-      type: packet.type,
-    }
-    const serializeCtxFn = _.get(packet, ['ctx', 'serializeCtx'])
-    serializedPacket.ctx = (
-      (serializeCtxFn) ? serializeCtxFn({packet}) : packet.ctx
-    )
-    const serializeDataFn = _.get(packet, ['ctx', 'serializeData'])
-    serializedPacket.data = (
-      (serializeDataFn) ? serializeDataFn({packet}) : packet.data
-    )
-    return serializedPacket
+  deserializeGraphState ({serializedGraphState}) {
   }
 }
 

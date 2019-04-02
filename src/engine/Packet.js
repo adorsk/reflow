@@ -1,3 +1,6 @@
+import _ from 'lodash'
+
+
 export class Packet {
   constructor (opts) {
     this.timestamp = opts.timestamp || this.createTimestamp()
@@ -34,6 +37,32 @@ export class Packet {
       ctx: this.ctx,
     }, opts))
   }
+
+  serialize () {
+    const serializedPacket = {
+      timestamp: this.timestamp,
+      type: this.type,
+    }
+    if (this.ctx) { serializedPacket.ctx = this.serializeCtx() }
+    if (this.isData()) { serializedPacket.data = this.serializeData() }
+    return serializedPacket
+  }
+
+  serializeCtx () {
+    const serializeCtxFn = _.get(this, ['ctx', 'serializeCtx'])
+    const serializedCtx = (
+      (serializeCtxFn) ? serializeCtxFn({packet: this}) : this.ctx
+    )
+    return serializedCtx
+  }
+
+  serializeData () {
+    const serializeDataFn = _.get(this, ['ctx', 'serializeData'])
+    const serializedData = (
+      (serializeDataFn) ? serializeDataFn({packet: this}) : this.data
+    )
+    return serializedData
+  }
 }
 
 Packet.Types = {
@@ -42,8 +71,12 @@ Packet.Types = {
   CLOSE: Symbol('OPEN'),
 }
 
-Packet.createDataPacket = ({data}) => {
-  return new Packet({type: Packet.Types.DATA, data})
+Packet.createDataPacket = ({data, ctx}) => {
+  return new Packet({type: Packet.Types.DATA, data, ctx})
+}
+
+Packet.fromSerializedPacket = ({serializedPacket}) => {
+  return new Packet({...serializedPacket})
 }
 
 export default Packet

@@ -4,11 +4,14 @@ import signals from 'signals'
 
 import Port from './Port.js'
 
-const DISPOSER_KEY = Symbol('disposer_key')
-const PORT_STATES_KEY = ':PORT_STATES:'
+const SYMBOLS = {
+  DISPOSER: Symbol('disposer_key'),
+  PORT_STATES: ':PORT_STATES:',
+}
 
 export class Node {
   constructor (opts = {}) {
+    this.SYMBOLS = SYMBOLS
     this.id = opts.id || _.uniqueId('node-')
     this.behaviors = Object.assign({
       drainIncomingHotWiresBeforeTick: true,
@@ -19,10 +22,7 @@ export class Node {
     this.changed = new signals.Signal()
     this.tickFn = opts.tickFn
     this.setState(opts.state || new Map())
-    this.ports = {
-      inputs: {},
-      outputs: {},
-    }
+    this.ports = {}
     for (let ioType of ['inputs', 'outputs']) {
       const portsForIoType = (opts.ports && opts.ports[ioType]) || {}
       _.map(portsForIoType, (port) => {
@@ -41,20 +41,95 @@ export class Node {
   }
 
   setState (state) {
-    if (this[DISPOSER_KEY]) { this[DISPOSER_KEY]() } // unbind prev state
+    // unbind prev state
+    if (this[this.SYMBOLS.DISPOSER]) { this[this.SYMBOLS.DISPOSER]() }
     state = (state.observe) ? state : observable.map(state)
-    if (! state.has(PORT_STATES_KEY)) {
-      state.set(PORT_STATES_KEY, new Map())
+    if (! state.has(this.SYMBOLS.PORT_STATES)) {
+      state.set(this.SYMBOLS.PORT_STATES, new Map())
     }
-    this[DISPOSER_KEY] = state.observe(() => {
+    this[this.SYMBOLS.DISPOSER] = state.observe(() => {
       this.changed.dispatch({type: 'state'})
     })
     this.state = state
   }
 
+  clearState () {
+    for (let key of this.state.keys()) {
+      if (key === this.SYMBOLS.PORT_STATES) { continue }
+      this.state.delete(key)
+    }
+    for (let port of _.values(this.getPorts())) {
+      port.clearState()
+    }
+  }
+
+  loadState (nextState) {
+    this.clearState()
+    for (let key of nextState.keys()) {
+      const value = nextState.get(key)
+      if (key === this.SYMBOLS.PORT_STATES) {
+        const portStates = value
+        for (let portKey of portStates.keys()) {
+          const port = this.ports[portKey]
+          if (! port) { continue }
+          port.loadState(portStates.gte(portKey))
+        }
+      } else {
+        this.state.set(key, value)
+      }
+    }
+  }
+
+  serializeState () {
+    const serializedState = {}
+    for (let key of this.state.keys()) {
+      let serializedValue
+      if (key === this.SYMBOLS.PORT_STATES) {
+        serializedValue = this.serializePortStates()
+      } else {
+        serializedValue = this.state.get(key)
+      }
+      serializedState[key] = serializedValue
+    }
+    return serializedState
+  }
+
+  serializePortStates () {
+    const serializedPortStates = {}
+    const portStates = this.state.get(this.SYMBOLS.PORT_STATES)
+    for (let portKey of portStates.keys()) {
+      const port = this.ports[portKey]
+      if (! port) { continue }
+      serializedPortStates[portKey] = port.serializeState()
+    }
+    return serializedPortStates
+  }
+
+  deserializeState (serializedState) {
+    const state = new Map()
+    for (let key of Object.keys(serializedState)) {
+      const serializedValue = serializedState[key]
+      if (key === this.SYMBOLS.PORT_STATES) {
+        const portStates = new Map()
+        const serializedPortStates = serializedValue
+        for (let portKey of Object.keys(serializedPortStates)) {
+          const port = this.ports[portKey]
+          if (! port) { continue }
+          const serializedPortState = serializedPortStates[portKey]
+          portStates.set(portKey, port.deserializeState(serializedPortState))
+        }
+        state.set(this.SYMBOLS.PORT_STATES, portStates)
+      } else {
+        state.set(key, serializedValue)
+      }
+    }
+    return state
+  }
+
   addPort ({port, ioType}) {
     port.setNode(this)
-    this.ports[ioType][port.id] = port
+    port.key = [ioType, port.id].join(':')
+    this.ports[port.key] = port
     port.changed.add((evt) => {
       this.changed.dispatch({type: ioType, data: {port}})
     })
@@ -103,18 +178,16 @@ export class Node {
       const [ioType, portId] = portSpec.split(':')
       portSpec = {ioType, portId}
     }
-    return this.ports[portSpec.ioType][portSpec.portId]
+    const portKey = [portSpec.ioType, portSpec.portId].join(':')
+    return this.ports[portKey]
   }
 
   getPorts () {
-    return [
-      ...Object.values(this.ports.inputs),
-      ...Object.values(this.ports.outputs)
-    ] 
+    return [...Object.values(this.ports)]
   }
 
   getPortsOfType ({ioType}) {
-    return this.ports[ioType]
+    return _.filter(this.getPorts(), (port) => (port.ioType === ioType))
   }
 
   getOutputPort (portId) {
@@ -125,11 +198,13 @@ export class Node {
     return this.getPort({ioType: 'inputs', portId})
   }
 
-  getInputPorts () { return this.ports['inputs'] }
+  getInputPorts () { return this.getPortsOfType({ioType: 'inputs'}) }
 
   get inputPorts () { return this.getInputPorts() }
 
-  getOutputPorts () { return this.ports['outputs'] }
+  getOutputPorts () { return this.getPortsOfType({ioType: 'outputs'}) }
+
+  get outputPorts () { return this.getOutputPorts() }
 
   hasHotInputs () {
     return _.some(this.getInputPorts(), port => port.isHot())
@@ -174,7 +249,9 @@ export class Node {
       port.unmount()
     }
     this.unmountTickFn()
-    if (this[DISPOSER_KEY]) { this[DISPOSER_KEY]() } 
+    if (this[this.SYMBOLS.DISPOSER]) {
+      this[this.SYMBOLS.DISPOSER]()
+    } 
     this.changed.removeAll()
   }
 
@@ -199,7 +276,7 @@ export class Node {
 Node.fromSpec = (spec) => {
   const { portSpecs, ...nodeOpts } = spec
   const node = new Node(nodeOpts)
-  const portStates = node.state.get(PORT_STATES_KEY)
+  const portStates = node.state.get(SYMBOLS.PORT_STATES)
   _.each(portSpecs, (portSpecsForIoType, ioType) => {
     _.each(portSpecsForIoType, (portSpec, portId) => {
       const portKey = [ioType, portId].join(':')

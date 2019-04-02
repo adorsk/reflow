@@ -1,4 +1,5 @@
 import _ from 'lodash'
+
 import Graph from '../Graph.js'
 import Node from '../Node.js'
 
@@ -7,6 +8,34 @@ describe('Graph', () => {
   beforeEach(() => {
     jest.useFakeTimers()
   })
+
+  const genBasicGraph = () => {
+    const graph = new Graph()
+    graph.addNodeFromSpec({nodeSpec: {
+      id: 'node1',
+      portSpecs: {
+        outputs: {
+          'out1': {},
+        }
+      },
+    }})
+    graph.addNodeFromSpec({nodeSpec: {
+      id: 'node2',
+      srcCode: 'node2.srcCode',
+      portSpecs: {
+        inputs: {
+          'in1': {},
+        }
+      },
+    }})
+    graph.addWireFromSpec({wireSpec: {
+      id: 'wire1',
+      src: 'node1:out1',
+      dest: 'node2:in1',
+      srcCode: 'wire1.srcCode',
+    }})
+    return graph
+  }
 
   describe('onChange listener', () => {
     it('ticks for onChange event', () => {
@@ -19,14 +48,14 @@ describe('Graph', () => {
   })
 
   describe('addNodeFromSpec', () => {
-    it('sets node state from store', () => {
+    it('sets node state', () => {
       const nodeId = 'node1'
       const graph = new Graph()
-      const someState = graph.store.getOrCreate({key: nodeId})
+      const someState = new Map()
       someState.set('foo', 'bar')
-      graph.store.set({key: nodeId, value: someState})
+      graph.nodeStates.set(nodeId, someState)
       const node = graph.addNodeFromSpec({nodeSpec: {id: nodeId}})
-      expect(node.state).toEqual(someState)
+      expect(node.state.get('foo')).toBe('bar')
     })
 
     it('dispatches changed signal by default', () => {
@@ -100,9 +129,126 @@ describe('Graph', () => {
     })
   })
 
+  describe('toSpec', () => {
+    it('derives expected nodeSpecs', () => {
+      const graph = new Graph()
+      graph.addNodeFromSpec({nodeSpec: {
+        id: 'node1',
+        srcCode: 'node1.srcCode',
+      }})
+      graph.addNodeFromSpec({nodeSpec: {
+        id: 'node2',
+        srcCode: 'node2.srcCode',
+      }})
+      const graphSpec = graph.toSpec()
+      const expectedGraphSpec = {
+        wireSpecs: {},
+        nodeSpecs: {
+          'node1': 'node1.srcCode',
+          'node2': 'node2.srcCode',
+        }
+      }
+      expect(graphSpec).toEqual(expectedGraphSpec)
+    })
+
+    it('derives expected wireSpecs', () => {
+      const graph = new Graph()
+      graph.addNodeFromSpec({nodeSpec: {
+        id: 'node1',
+        srcCode: 'node1.srcCode',
+        portSpecs: {
+          outputs: {
+            'out1': {},
+          }
+        },
+      }})
+      graph.addNodeFromSpec({nodeSpec: {
+        id: 'node2',
+        srcCode: 'node2.srcCode',
+        portSpecs: {
+          inputs: {
+            'in1': {},
+          }
+        },
+      }})
+      graph.addWireFromSpec({wireSpec: {
+        id: 'wire1',
+        src: 'node1:out1',
+        dest: 'node2:in1',
+        srcCode: 'wire1.srcCode',
+      }})
+      const graphSpec = graph.toSpec()
+      const expectedGraphSpec = {
+        wireSpecs: {
+          'wire1': 'wire1.srcCode',
+        },
+        nodeSpecs: {
+          'node1': 'node1.srcCode',
+          'node2': 'node2.srcCode',
+        }
+      }
+      expect(graphSpec).toEqual(expectedGraphSpec)
+    })
+  })
+
   describe('Graph.fromSpec', () => {
     it.skip('creates expected graph', () => {
       this.fail('flesh this out eventually')
+    })
+  })
+
+  describe('serializeState', () => {
+    it('copies values for all normal keys', () => {
+      const graph = genBasicGraph()
+      graph.state.set('pie', 'cherry')
+      graph.state.set('animal', 'stoat')
+      const serializedState = graph.serializeState()
+      expect(serializedState['pie']).toEqual('cherry')
+      expect(serializedState['animal']).toEqual('stoat')
+    })
+
+    it('handles nested nodeStates', () => {
+      const graph = genBasicGraph()
+      graph.serializeNodeStates = () => 'mockSerializedNodeStates'
+      const serializedState = graph.serializeState()
+      expect(serializedState[graph.SYMBOLS.NODE_STATES]).toEqual(
+        'mockSerializedNodeStates')
+    })
+
+    it('handles nested wireStates', () => {
+      const graph = genBasicGraph()
+      graph.serializeWireStates = () => 'mockSerializedWireStates'
+      const serializedState = graph.serializeState()
+      expect(serializedState[graph.SYMBOLS.WIRE_STATES]).toEqual(
+        'mockSerializedWireStates')
+    })
+  })
+
+  describe('serializeNodeStates', () => {
+    it('serializes nodeStates', () => {
+      const graph = genBasicGraph()
+      const expectedSerializedNodeStates = {}
+      for (let node of _.values(graph.getNodes())) {
+        const mockSerializedNodeState = 'mock:' + node.id
+        node.serializeState = () => mockSerializedNodeState
+        expectedSerializedNodeStates[node.id] = mockSerializedNodeState
+      }
+      const actualSerializedNodeStates = graph.serializeNodeStates()
+      expect(actualSerializedNodeStates).toEqual(expectedSerializedNodeStates)
+    })
+  })
+
+  describe('serializeWireStates', () => {
+    it('serializes wireStates', () => {
+      const graph = genBasicGraph()
+      const expectedSerializedWireStates = {}
+      for (let wire of _.values(graph.getWires())) {
+        const mockSerializedWireState = 'mock:' + wire.id
+        wire.serializeState = () => mockSerializedWireState
+        expectedSerializedWireStates[wire.id] = mockSerializedWireState
+      }
+      const actualSerializedWireStates = graph.serializeWireStates()
+      expect(actualSerializedWireStates).toEqual(expectedSerializedWireStates)
     })
   })
 })

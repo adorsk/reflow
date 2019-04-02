@@ -5,11 +5,14 @@ import signals from 'signals'
 import { stringToHashCode } from '../utils/index.js'
 import Packet from './Packet.js'
 
-const STATE_DISPOSER_KEY = Symbol('state_disposer_key')
-const PACKETS_KEY = 'PACKETS'
+const SYMBOLS = {
+  DISPOSER: Symbol('DISPOSER'),
+  PACKETS: ':PACKETS:',
+}
 
 class Port {
   constructor (opts = {}) {
+    this.SYMBOLS = SYMBOLS
     this.id = opts.id // @TODO: should become label?
     this.key = opts.key
     this.behaviors = opts.behaviors || {}
@@ -25,7 +28,6 @@ class Port {
 
   init ({packets}) {
     if (_.isUndefined(this.state.get('initialized'))) {
-      this.packets = observable([], {deep: false})
       for (let packet of (packets || [])) {
         this.pushPacket(packet)
       }
@@ -50,14 +52,65 @@ class Port {
 
   setState (state) {
     // unbind prev state
-    if (this[STATE_DISPOSER_KEY]) { this[STATE_DISPOSER_KEY]() }
+    if (this[this.SYMBOLS.DISPOSER]) { this[this.SYMBOLS.DISPOSER]() }
     state = (state.observe) ? state : observable(state)
-    this[STATE_DISPOSER_KEY] = state.observe(this.changed.dispatch)
+    if (! state.has(this.SYMBOLS.PACKETS)) {
+      state.set(this.SYMBOLS.PACKETS, observable([], {deep: false}))
+    }
+    this[this.SYMBOLS.DISPOSER] = state.observe(this.changed.dispatch)
     this.state = state
   }
 
-  get packets () { return this.state.get(PACKETS_KEY) || [] }
-  set packets (packets_) { this.state.set(PACKETS_KEY, packets_) }
+  clearState () {
+    this.setState(new Map())
+  }
+
+  loadState (nextState) {
+    this.clearState()
+    for (let key of nextState.keys()) {
+      const value = nextState.get(key)
+      this.state.set(key, value)
+    }
+  }
+
+  serializeState () {
+    const serializedState = {}
+    for (let key of this.state.keys()) {
+      let serializedValue
+      if (key === this.SYMBOLS.PACKETS) {
+        serializedValue = this.serializePackets()
+      } else {
+        serializedValue = this.state.get(key)
+      }
+      serializedState[key] = serializedValue
+    }
+    return serializedState
+  }
+
+  serializePackets () {
+    const serializedPackets = this.packets.map((packet) => packet.serialize())
+    return serializedPackets
+  }
+
+  deserializeState (serializedState) {
+    const state = new Map()
+    for (let key of Object.keys(serializedState)) {
+      const serializedValue = serializedState[key]
+      if (key === this.SYMBOLS.PACKETS) {
+        const packets = []
+        const serializedPackets = serializedValue
+        for (let serializedPacket of serializedPackets) {
+          packets.push(Packet.fromSerializedPacket({serializedPacket}))
+        }
+        state.set(this.SYMBOLS.PACKETS, packets)
+      } else {
+        state.set(key, serializedValue)
+      }
+    }
+    return state
+  }
+
+  get packets () { return this.state.get(this.SYMBOLS.PACKETS) || [] }
 
   pushPacket (packet) {
     this.packets.push(packet)
