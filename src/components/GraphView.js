@@ -4,8 +4,9 @@ import _ from 'lodash'
 import DragContainer from './DragContainer.js'
 import { DraggableNodeView } from './NodeView.js'
 import WireView from './WireView.js'
-import Transformer from '../utils/Transformer.js'
 
+import { compileFn } from '../utils/index.js'
+import Transformer from '../utils/Transformer.js'
 import { EvaluationError, CompilationError } from '../utils/Errors.js'
 
 
@@ -90,7 +91,7 @@ class GraphView extends React.Component {
           let nodeSpec, fn
           try {
             const transpiledCode = this.transformer.transform(code).code
-            fn = eval(transpiledCode) // eslint-disable-line
+            fn = compileFn(transpiledCode)
           } catch (err) {
             throw new CompilationError(err)
           }

@@ -4,6 +4,7 @@ import signals from 'signals'
 import Node from './Node.js'
 import Wire from './Wire.js'
 import ObservableMapStore from './ObservableMapStore.js'
+import { compileFn } from '../utils/index.js'
 
 const SYMBOLS = {
   NODE_STATES: ':NODE_STATES:',
@@ -336,7 +337,11 @@ Graph.fromSpec = async ({spec = {}, compileFn} = {}) => {
   const graph = new Graph(spec.ctorOpts || {})
   for (let nodeSpec of _.values(spec.nodeSpecs)) {
     if (typeof nodeSpec === 'string') { nodeSpec = compileFn(nodeSpec) }
-    if (typeof nodeSpec === 'function') { nodeSpec = await nodeSpec() }
+    if (typeof nodeSpec === 'function') {
+      const fnSrc = nodeSpec.toString()
+      nodeSpec = await nodeSpec()
+      if (! nodeSpec.srcCode) { nodeSpec.srcCode = fnSrc }
+    }
     graph.addNodeFromSpec({nodeSpec})
   }
   for (let wireSpec of _.values(spec.wireSpecs)) {
@@ -347,13 +352,6 @@ Graph.fromSpec = async ({spec = {}, compileFn} = {}) => {
   return graph
 }
 
-Graph.compileFn = (fnString) => {
-  const fnBody = fnString.slice(
-    fnString.indexOf("{") + 1,
-    fnString.lastIndexOf("}")
-  )
-  const fn = new Function(fnBody) // eslint-disable-line
-  return fn
-}
+Graph.compileFn = compileFn
 
 export default Graph

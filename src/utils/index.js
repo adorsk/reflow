@@ -18,3 +18,12 @@ export function stringToHashCode (s) {
   }
   return hash
 }
+
+export function compileFn (fnString) {
+  const fnBody = fnString.slice(
+    fnString.indexOf("{") + 1,
+    fnString.lastIndexOf("}")
+  )
+  const fn = new Function(fnBody) // eslint-disable-line
+  return fn
+}
