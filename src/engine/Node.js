@@ -72,7 +72,7 @@ export class Node {
         for (let portKey of portStates.keys()) {
           const port = this.ports[portKey]
           if (! port) { continue }
-          port.loadState(portStates.gte(portKey))
+          port.loadState(portStates.get(portKey))
         }
       } else {
         this.state.set(key, value)

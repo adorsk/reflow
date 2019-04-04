@@ -311,19 +311,42 @@ export class Graph {
     }
     return graphSpec
   }
+
+  serialize () {
+    const serialization = {
+      spec: this.toSpec(),
+      state: this.serializeState(),
+    }
+    return serialization
+  }
 }
 
-Graph.fromSpec = async ({graphSpec = {}}) => {
-  const graph = new Graph({id: graphSpec.id})
-  for (let nodeSpec of _.values(graphSpec.nodeSpecs)) {
+Graph.fromSerialization = async ({serialization}) => {
+  const { spec, state: serializedState } = serialization
+  const graph = await Graph.fromSpec({spec})
+  const state = graph.deserializeState(serializedState)
+  graph.loadState(state)
+  return graph
+}
+
+Graph.fromSpec = async ({spec = {}, compileFn} = {}) => {
+  compileFn = compileFn || Graph.compileFn
+  const graph = new Graph({id: spec.id})
+  for (let nodeSpec of _.values(spec.nodeSpecs)) {
+    if (typeof nodeSpec === 'string') { nodeSpec = compileFn(nodeSpec) }
     if (typeof nodeSpec === 'function') { nodeSpec = await nodeSpec() }
     graph.addNodeFromSpec({nodeSpec})
   }
-  for (let wireSpec of _.values(graphSpec.wireSpecs)) {
+  for (let wireSpec of _.values(spec.wireSpecs)) {
+    if (typeof wireSpec === 'string') { wireSpec = compileFn(wireSpec)}
     if (typeof wireSpec === 'function') { wireSpec = await wireSpec() }
     graph.addWireFromSpec({wireSpec})
   }
   return graph
+}
+
+Graph.compileFn = (fnString) => {
+  return eval(fnString) // eslint-disable-line
 }
 
 export default Graph

@@ -11,29 +11,56 @@ describe('Graph', () => {
 
   const genBasicGraph = () => {
     const graph = new Graph()
-    graph.addNodeFromSpec({nodeSpec: {
-      id: 'node1',
-      portSpecs: {
-        outputs: {
-          'out1': {},
+    const nodeSpecFactories = {
+      node1: () => {
+        const nodeSpec = {
+          id: 'node1',
+          portSpecs: {
+            outputs: {
+              'out1': {},
+            }
+          },
         }
+        return nodeSpec
       },
-    }})
-    graph.addNodeFromSpec({nodeSpec: {
-      id: 'node2',
-      srcCode: 'node2.srcCode',
-      portSpecs: {
-        inputs: {
-          'in1': {},
+      node2: () => {
+        const nodeSpec = {
+          id: 'node2',
+          portSpecs: {
+            inputs: {
+              'in1': {},
+            }
+          }
         }
-      },
-    }})
-    graph.addWireFromSpec({wireSpec: {
-      id: 'wire1',
-      src: 'node1:out1',
-      dest: 'node2:in1',
-      srcCode: 'wire1.srcCode',
-    }})
+        return nodeSpec
+      }
+    }
+    const nodeSpecs = _.mapValues(nodeSpecFactories, (factory, key) => {
+      const nodeSpec = factory()
+      nodeSpec.srcCode = factory.toString()
+      return nodeSpec
+    })
+    graph.addNodeFromSpec({nodeSpec: nodeSpecs.node1})
+    graph.addNodeFromSpec({nodeSpec: nodeSpecs.node2})
+
+    const wireSpecFactories = {
+      'wire1': () => {
+        const wireSpec = {
+          id: 'wire1',
+          src: 'node1:out1',
+          dest: 'node2:in1',
+          srcCode: 'wire1.srcCode',
+        }
+        return wireSpec
+      }
+    }
+    const wireSpecs = _.mapValues(wireSpecFactories, (factory, key) => {
+      const wireSpec = factory()
+      wireSpec.srcCode = factory.toString()
+      return wireSpec
+    })
+    graph.addWireFromSpec({wireSpec: wireSpecs.wire1})
+
     return graph
   }
 
@@ -249,6 +276,33 @@ describe('Graph', () => {
       }
       const actualSerializedWireStates = graph.serializeWireStates()
       expect(actualSerializedWireStates).toEqual(expectedSerializedWireStates)
+    })
+  })
+
+  describe('serialize', () => {
+    it('returns expected serialization', () => {
+      const graph = genBasicGraph()
+      const mocks = {}
+      for (let fnName of ['toSpec', 'serializeState']) {
+        const mockFn = () => 'mockReturn:' + fnName
+        mocks[fnName] = mockFn
+        graph[fnName] = mockFn
+      }
+      const expectedSerialization = {
+        spec: mocks.toSpec(),
+        state: mocks.serializeState(),
+      }
+      const actualSerialization = graph.serialize()
+      expect(actualSerialization).toEqual(expectedSerialization)
+    })
+  })
+
+  describe('Graph.fromSerialization', () => {
+    it('can create graph from serialization', async () => {
+      const orig = genBasicGraph()
+      const serialization = orig.serialize()
+      const fromSerialization = await Graph.fromSerialization({serialization})
+      expect(fromSerialization).toBeDefined()
     })
   })
 })
