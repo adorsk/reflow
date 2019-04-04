@@ -273,7 +273,7 @@ describe('Graph', () => {
     })
   })
 
-  describe('serialize', () => {
+  describe('toSerialization', () => {
     it('returns expected serialization', () => {
       const graph = genBasicGraph()
       const mocks = {}
@@ -286,7 +286,7 @@ describe('Graph', () => {
         spec: mocks.toSpec(),
         state: mocks.serializeState(),
       }
-      const actualSerialization = graph.serialize()
+      const actualSerialization = graph.toSerialization()
       expect(actualSerialization).toEqual(expectedSerialization)
     })
   })
@@ -294,7 +294,7 @@ describe('Graph', () => {
   describe('Graph.fromSerialization', () => {
     it('can create graph from serialization', async () => {
       const orig = genBasicGraph()
-      const serialization = orig.serialize()
+      const serialization = orig.toSerialization()
       const hydrated = await Graph.fromSerialization({serialization})
       expect(hydrated.id).toEqual(orig.id)
     })

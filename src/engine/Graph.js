@@ -314,7 +314,7 @@ export class Graph {
     return graphSpec
   }
 
-  serialize () {
+  toSerialization () {
     const serialization = {
       spec: this.toSpec(),
       state: this.serializeState(),
@@ -348,7 +348,12 @@ Graph.fromSpec = async ({spec = {}, compileFn} = {}) => {
 }
 
 Graph.compileFn = (fnString) => {
-  return eval(fnString) // eslint-disable-line
+  const fnBody = fnString.slice(
+    fnString.indexOf("{") + 1,
+    fnString.lastIndexOf("}")
+  )
+  const fn = new Function(fnBody) // eslint-disable-line
+  return fn
 }
 
 export default Graph
