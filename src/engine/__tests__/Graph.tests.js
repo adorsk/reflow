@@ -168,14 +168,11 @@ describe('Graph', () => {
         srcCode: 'node2.srcCode',
       }})
       const graphSpec = graph.toSpec()
-      const expectedGraphSpec = {
-        wireSpecs: {},
-        nodeSpecs: {
-          'node1': 'node1.srcCode',
-          'node2': 'node2.srcCode',
-        }
+      const expectedNodeSpecs = {
+        'node1': 'node1.srcCode',
+        'node2': 'node2.srcCode',
       }
-      expect(graphSpec).toEqual(expectedGraphSpec)
+      expect(graphSpec.nodeSpecs).toEqual(expectedNodeSpecs)
     })
 
     it('derives expected wireSpecs', () => {
@@ -205,22 +202,10 @@ describe('Graph', () => {
         srcCode: 'wire1.srcCode',
       }})
       const graphSpec = graph.toSpec()
-      const expectedGraphSpec = {
-        wireSpecs: {
-          'wire1': 'wire1.srcCode',
-        },
-        nodeSpecs: {
-          'node1': 'node1.srcCode',
-          'node2': 'node2.srcCode',
-        }
+      const expectedWireSpecs = {
+        'wire1': 'wire1.srcCode',
       }
-      expect(graphSpec).toEqual(expectedGraphSpec)
-    })
-  })
-
-  describe('Graph.fromSpec', () => {
-    it.skip('creates expected graph', () => {
-      this.fail('flesh this out eventually')
+      expect(graphSpec.wireSpecs).toEqual(expectedWireSpecs)
     })
   })
 
@@ -279,6 +264,15 @@ describe('Graph', () => {
     })
   })
 
+  describe('Graph.fromSpec', () => {
+    it('creates expected graph', async () => {
+      const orig = genBasicGraph()
+      const spec = orig.toSpec()
+      const hydrated = await Graph.fromSpec({spec})
+      expect(hydrated.id).toEqual(orig.id)
+    })
+  })
+
   describe('serialize', () => {
     it('returns expected serialization', () => {
       const graph = genBasicGraph()
@@ -301,8 +295,8 @@ describe('Graph', () => {
     it('can create graph from serialization', async () => {
       const orig = genBasicGraph()
       const serialization = orig.serialize()
-      const fromSerialization = await Graph.fromSerialization({serialization})
-      expect(fromSerialization).toBeDefined()
+      const hydrated = await Graph.fromSerialization({serialization})
+      expect(hydrated.id).toEqual(orig.id)
     })
   })
 })

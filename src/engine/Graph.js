@@ -299,16 +299,18 @@ export class Graph {
   }
 
   toSpec () {
-    const graphSpec = {
-      nodeSpecs: {},
-      wireSpecs: {},
-    }
+    const ctorOpts = { id: this.id }
+
+    const nodeSpecs = {}
     for (let node of _.values(this.getNodes())) {
-      graphSpec.nodeSpecs[node.id] = node.srcCode
+      nodeSpecs[node.id] = node.srcCode
     }
+
+    const wireSpecs = {}
     for (let wire of _.values(this.getWires())) {
-      graphSpec.wireSpecs[wire.id] = wire.srcCode
+      wireSpecs[wire.id] = wire.srcCode
     }
+    const graphSpec = { ctorOpts, nodeSpecs, wireSpecs }
     return graphSpec
   }
 
@@ -331,7 +333,7 @@ Graph.fromSerialization = async ({serialization}) => {
 
 Graph.fromSpec = async ({spec = {}, compileFn} = {}) => {
   compileFn = compileFn || Graph.compileFn
-  const graph = new Graph({id: spec.id})
+  const graph = new Graph(spec.ctorOpts || {})
   for (let nodeSpec of _.values(spec.nodeSpecs)) {
     if (typeof nodeSpec === 'string') { nodeSpec = compileFn(nodeSpec) }
     if (typeof nodeSpec === 'function') { nodeSpec = await nodeSpec() }
