@@ -67,4 +67,18 @@ describe('Wire', () => {
       expect(actualSerializedPackets).toEqual(expectedSerializedPackets)
     })
   })
+
+  describe('getSerializedSpec', () => {
+    it('uses ctx.getSerializedSpec if present', () => {
+      const wire = genBasicWire()
+      wire.ctx.getSerializedSpec = () => 'mockSpec'
+      expect(wire.getSerializedSpec()).toEqual('mockSpec')
+    })
+
+    it('uses specFactoryFn if no ctx.toSpec', () => {
+      const wire = genBasicWire()
+      wire.specFactoryFn = 'mockSpec'
+      expect(wire.getSerializedSpec()).toEqual('mockSpec')
+    })
+  })
 })

@@ -104,4 +104,19 @@ describe('Node', () => {
       expect(actualSerializedPortStates).toEqual(expectedSerializedPortStates)
     })
   })
+
+  describe('getSerializedSpec', () => {
+    it('uses ctx.getSerializedSpec if present', () => {
+      const node = genBasicNode()
+      node.ctx.getSerializedSpec = () => 'mockSpec'
+      expect(node.getSerializedSpec()).toEqual('mockSpec')
+    })
+
+    it('uses specFactoryFn if no ctx.toSpec', () => {
+      const node = genBasicNode()
+      node.specFactoryFn = 'mockSpec'
+      expect(node.getSerializedSpec()).toEqual('mockSpec')
+    })
+  })
+
 })

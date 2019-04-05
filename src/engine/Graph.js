@@ -4,7 +4,6 @@ import signals from 'signals'
 import Node from './Node.js'
 import Wire from './Wire.js'
 import ObservableMapStore from './ObservableMapStore.js'
-import { compileFn } from '../utils/index.js'
 
 const SYMBOLS = {
   NODE_STATES: ':NODE_STATES:',
@@ -299,59 +298,67 @@ export class Graph {
     return state
   }
 
-  toSpec () {
-    const ctorOpts = { id: this.id }
-
-    const nodeSpecs = {}
-    for (let node of _.values(this.getNodes())) {
-      nodeSpecs[node.id] = node.srcCode
+  getSerializedSpec () {
+    const getSpecSerializationsForItems = (items) => {
+      const keyedItems = _.keyBy(items, 'id')
+      return _.mapValues(keyedItems, (item) => item.getSerializedSpec())
     }
-
-    const wireSpecs = {}
-    for (let wire of _.values(this.getWires())) {
-      wireSpecs[wire.id] = wire.srcCode
+    const serializedSpec = {
+      ctorOpts: { id: this.id },
+      serializedNodeSpecs: getSpecSerializationsForItems(this.getNodes()),
+      serializedWireSpecs: getSpecSerializationsForItems(this.getWires()),
     }
-    const graphSpec = { ctorOpts, nodeSpecs, wireSpecs }
-    return graphSpec
+    return serializedSpec
   }
 
   toSerialization () {
     const serialization = {
-      spec: this.toSpec(),
-      state: this.serializeState(),
+      serializedSpec: this.getSerializedSpec(),
+      serializedState: this.serializeState(),
     }
     return serialization
   }
 }
 
 Graph.fromSerialization = async ({serialization}) => {
-  const { spec, state: serializedState } = serialization
-  const graph = await Graph.fromSpec({spec})
-  const state = graph.deserializeState(serializedState)
+  const graph = await Graph.fromSerializedSpec(serialization.serializedSpec)
+  const state = graph.deserializeState(serialization.serializedState)
   graph.loadState(state)
   return graph
 }
 
-Graph.fromSpec = async ({spec = {}, compileFn} = {}) => {
-  compileFn = compileFn || Graph.compileFn
+Graph.deserializeSpec = async (serializedSpec) => {
+  const deserializeSpecs = async ({serializedSpecs, deserializer}) => {
+    return await Promise.all(serializedSpecs.map(deserializer))
+  }
+  const spec = {
+    ctorOpts: serializedSpec.ctorOpts,
+    nodeSpecs: await deserializeSpecs({
+      serializedSpecs: _.values(serializedSpec.serializedNodeSpecs),
+      deserializer: Node.deserializeSpec,
+    }),
+    wireSpecs: await deserializeSpecs({
+      serializedSpecs: _.values(serializedSpec.serializedWireSpecs),
+      deserializer: Wire.deserializeSpec,
+    }),
+  }
+  return spec 
+}
+
+Graph.fromSpec = ({spec = {}} = {}) => {
   const graph = new Graph(spec.ctorOpts || {})
   for (let nodeSpec of _.values(spec.nodeSpecs)) {
-    if (typeof nodeSpec === 'string') { nodeSpec = compileFn(nodeSpec) }
-    if (typeof nodeSpec === 'function') {
-      const fnSrc = nodeSpec.toString()
-      nodeSpec = await nodeSpec()
-      if (! nodeSpec.srcCode) { nodeSpec.srcCode = fnSrc }
-    }
     graph.addNodeFromSpec({nodeSpec})
   }
   for (let wireSpec of _.values(spec.wireSpecs)) {
-    if (typeof wireSpec === 'string') { wireSpec = compileFn(wireSpec)}
-    if (typeof wireSpec === 'function') { wireSpec = await wireSpec() }
     graph.addWireFromSpec({wireSpec})
   }
   return graph
 }
 
-Graph.compileFn = compileFn
+Graph.fromSerializedSpec = async (serializedSpec) => {
+  const spec = await Graph.deserializeSpec(serializedSpec)
+  return Graph.fromSpec({spec})
+}
 
 export default Graph

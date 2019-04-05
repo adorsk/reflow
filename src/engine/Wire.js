@@ -16,7 +16,9 @@ export class Wire {
 
   constructor (opts = {}) {
     this.SYMBOLS = SYMBOLS
+    this.ctx = opts.ctx || {}
     this.id = opts.id
+    this.specFactoryFn = opts.specFactoryFn
     this.src = opts.src
     this.dest = opts.dest
     this.srcCode = opts.srcCode
@@ -154,6 +156,23 @@ export class Wire {
       return [term.node.id, term.port.id].join(Wire.NODE_PORT_SEPARATOR)
     }).join(` ${Wire.TERMINALS_SEPARATOR} `)
   }
+
+  getSerializedSpec () {
+    let serializedSpec
+    if (this.ctx.getSerializedSpec) {
+      serializedSpec = this.ctx.getSerializedSpec()
+    } else {
+      serializedSpec = this.specFactoryFn
+    }
+    return serializedSpec
+  }
+}
+
+Wire.deserializeSpec = async (serializedSpec) => {
+  if (typeof serializedSpec === 'function') {
+    return serializedSpec()
+  }
+  return serializedSpec
 }
 
 export default Wire

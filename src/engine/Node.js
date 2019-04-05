@@ -18,7 +18,7 @@ export class Node {
       quenchHotInputsAfterTick: true,
     }, opts.behaviors)
     this.ctx = opts.ctx || {}
-    this.srcCode = opts.srcCode || ''
+    this.specFactoryFn = opts.specFactoryFn
     this.changed = new signals.Signal()
     this.tickFn = opts.tickFn
     this.setState(opts.state || new Map())
@@ -271,6 +271,23 @@ export class Node {
       2
     )
   }
+
+  getSerializedSpec () {
+    let serializedSpec
+    if (this.ctx.getSerializedSpec) {
+      serializedSpec = this.ctx.getSerializedSpec()
+    } else {
+      serializedSpec = this.specFactoryFn
+    }
+    return serializedSpec
+  }
+}
+
+Node.deserializeSpec = async (serializedSpec) => {
+  if (typeof serializedSpec === 'function') {
+    return serializedSpec()
+  }
+  return serializedSpec
 }
 
 Node.fromSpec = (spec) => {

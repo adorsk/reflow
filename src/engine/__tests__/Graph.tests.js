@@ -37,7 +37,7 @@ describe('Graph', () => {
     }
     const nodeSpecs = _.mapValues(nodeSpecFactories, (factory, key) => {
       const nodeSpec = factory()
-      nodeSpec.srcCode = factory.toString()
+      nodeSpec.specFactoryFn = factory
       return nodeSpec
     })
     graph.addNodeFromSpec({nodeSpec: nodeSpecs.node1})
@@ -56,7 +56,7 @@ describe('Graph', () => {
     }
     const wireSpecs = _.mapValues(wireSpecFactories, (factory, key) => {
       const wireSpec = factory()
-      wireSpec.srcCode = factory.toString()
+      wireSpec.specFactoryFn = factory
       return wireSpec
     })
     graph.addWireFromSpec({wireSpec: wireSpecs.wire1})
@@ -156,30 +156,26 @@ describe('Graph', () => {
     })
   })
 
-  describe('toSpec', () => {
-    it('derives expected nodeSpecs', () => {
+  describe('getSerializedSpec', () => {
+    it('derives expected serializedNodeSpecs', () => {
       const graph = new Graph()
-      graph.addNodeFromSpec({nodeSpec: {
-        id: 'node1',
-        srcCode: 'node1.srcCode',
-      }})
-      graph.addNodeFromSpec({nodeSpec: {
-        id: 'node2',
-        srcCode: 'node2.srcCode',
-      }})
-      const graphSpec = graph.toSpec()
-      const expectedNodeSpecs = {
-        'node1': 'node1.srcCode',
-        'node2': 'node2.srcCode',
+      graph.addNodeFromSpec({nodeSpec: { id: 'node1' }})
+      graph.addNodeFromSpec({nodeSpec: { id: 'node2' }})
+      graph.nodes['node1'].getSerializedSpec = () => 'mockSpec:node1'
+      graph.nodes['node2'].getSerializedSpec = () => 'mockSpec:node2'
+      const serializedGraphSpec = graph.getSerializedSpec()
+      const expectedSerializedNodeSpecs = {
+        'node1': 'mockSpec:node1',
+        'node2': 'mockSpec:node2',
       }
-      expect(graphSpec.nodeSpecs).toEqual(expectedNodeSpecs)
+      expect(serializedGraphSpec.serializedNodeSpecs)
+        .toEqual(expectedSerializedNodeSpecs)
     })
 
-    it('derives expected wireSpecs', () => {
+    it('derives expected serializedWireSpecs', () => {
       const graph = new Graph()
       graph.addNodeFromSpec({nodeSpec: {
         id: 'node1',
-        srcCode: 'node1.srcCode',
         portSpecs: {
           outputs: {
             'out1': {},
@@ -188,7 +184,6 @@ describe('Graph', () => {
       }})
       graph.addNodeFromSpec({nodeSpec: {
         id: 'node2',
-        srcCode: 'node2.srcCode',
         portSpecs: {
           inputs: {
             'in1': {},
@@ -201,11 +196,11 @@ describe('Graph', () => {
         dest: 'node2:in1',
         srcCode: 'wire1.srcCode',
       }})
-      const graphSpec = graph.toSpec()
-      const expectedWireSpecs = {
-        'wire1': 'wire1.srcCode',
-      }
-      expect(graphSpec.wireSpecs).toEqual(expectedWireSpecs)
+      graph.wires['wire1'].getSerializedSpec = () => 'mockSpec:wire1'
+      const serializedGraphSpec = graph.getSerializedSpec()
+      const expectedSerializedWireSpecs = { 'wire1': 'mockSpec:wire1' }
+      expect(serializedGraphSpec.serializedWireSpecs)
+        .toEqual(expectedSerializedWireSpecs)
     })
   })
 
@@ -264,27 +259,27 @@ describe('Graph', () => {
     })
   })
 
-  describe('Graph.fromSpec', () => {
+  describe('Graph.fromSerializedSpec', () => {
     it('creates expected graph', async () => {
       const orig = genBasicGraph()
-      const spec = orig.toSpec()
-      const hydrated = await Graph.fromSpec({spec})
+      const serializedSpec = orig.getSerializedSpec()
+      const hydrated = await Graph.fromSerializedSpec(serializedSpec)
       expect(hydrated.id).toEqual(orig.id)
     })
   })
 
-  describe('toSerialization', () => {
+  describe('getSerialization', () => {
     it('returns expected serialization', () => {
       const graph = genBasicGraph()
       const mocks = {}
-      for (let fnName of ['toSpec', 'serializeState']) {
+      for (let fnName of ['getSerializedSpec', 'serializeState']) {
         const mockFn = () => 'mockReturn:' + fnName
         mocks[fnName] = mockFn
         graph[fnName] = mockFn
       }
       const expectedSerialization = {
-        spec: mocks.toSpec(),
-        state: mocks.serializeState(),
+        serializedSpec: mocks.getSerializedSpec(),
+        serializedState: mocks.serializeState(),
       }
       const actualSerialization = graph.toSerialization()
       expect(actualSerialization).toEqual(expectedSerialization)
