@@ -204,12 +204,12 @@ describe('Graph', () => {
     })
   })
 
-  describe('serializeState', () => {
+  describe('getSerializedState', () => {
     it('copies values for all normal keys', () => {
       const graph = genBasicGraph()
       graph.state.set('pie', 'cherry')
       graph.state.set('animal', 'stoat')
-      const serializedState = graph.serializeState()
+      const serializedState = graph.getSerializedState()
       expect(serializedState['pie']).toEqual('cherry')
       expect(serializedState['animal']).toEqual('stoat')
     })
@@ -217,7 +217,7 @@ describe('Graph', () => {
     it('handles nested nodeStates', () => {
       const graph = genBasicGraph()
       graph.serializeNodeStates = () => 'mockSerializedNodeStates'
-      const serializedState = graph.serializeState()
+      const serializedState = graph.getSerializedState()
       expect(serializedState[graph.SYMBOLS.NODE_STATES]).toEqual(
         'mockSerializedNodeStates')
     })
@@ -225,7 +225,7 @@ describe('Graph', () => {
     it('handles nested wireStates', () => {
       const graph = genBasicGraph()
       graph.serializeWireStates = () => 'mockSerializedWireStates'
-      const serializedState = graph.serializeState()
+      const serializedState = graph.getSerializedState()
       expect(serializedState[graph.SYMBOLS.WIRE_STATES]).toEqual(
         'mockSerializedWireStates')
     })
@@ -237,7 +237,7 @@ describe('Graph', () => {
       const expectedSerializedNodeStates = {}
       for (let node of _.values(graph.getNodes())) {
         const mockSerializedNodeState = 'mock:' + node.id
-        node.serializeState = () => mockSerializedNodeState
+        node.getSerializedState = () => mockSerializedNodeState
         expectedSerializedNodeStates[node.id] = mockSerializedNodeState
       }
       const actualSerializedNodeStates = graph.serializeNodeStates()
@@ -251,7 +251,7 @@ describe('Graph', () => {
       const expectedSerializedWireStates = {}
       for (let wire of _.values(graph.getWires())) {
         const mockSerializedWireState = 'mock:' + wire.id
-        wire.serializeState = () => mockSerializedWireState
+        wire.getSerializedState = () => mockSerializedWireState
         expectedSerializedWireStates[wire.id] = mockSerializedWireState
       }
       const actualSerializedWireStates = graph.serializeWireStates()
@@ -272,16 +272,16 @@ describe('Graph', () => {
     it('returns expected serialization', () => {
       const graph = genBasicGraph()
       const mocks = {}
-      for (let fnName of ['getSerializedSpec', 'serializeState']) {
+      for (let fnName of ['getSerializedSpec', 'getSerializedState']) {
         const mockFn = () => 'mockReturn:' + fnName
         mocks[fnName] = mockFn
         graph[fnName] = mockFn
       }
       const expectedSerialization = {
         serializedSpec: mocks.getSerializedSpec(),
-        serializedState: mocks.serializeState(),
+        serializedState: mocks.getSerializedState(),
       }
-      const actualSerialization = graph.toSerialization()
+      const actualSerialization = graph.getSerialization()
       expect(actualSerialization).toEqual(expectedSerialization)
     })
   })
@@ -289,7 +289,7 @@ describe('Graph', () => {
   describe('Graph.fromSerialization', () => {
     it('can create graph from serialization', async () => {
       const orig = genBasicGraph()
-      const serialization = orig.toSerialization()
+      const serialization = orig.getSerialization()
       const hydrated = await Graph.fromSerialization({serialization})
       expect(hydrated.id).toEqual(orig.id)
     })

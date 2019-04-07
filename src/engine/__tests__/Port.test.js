@@ -32,12 +32,12 @@ describe('Port', () => {
     })
   })
 
-  describe('serializeState', () => {
+  describe('getSerializedState', () => {
     it('copies values for all normal keys', () => {
       const port = genBasicPort()
       port.state.set('pie', 'cherry')
       port.state.set('animal', 'stoat')
-      const serializedState = port.serializeState()
+      const serializedState = port.getSerializedState()
       expect(serializedState['pie']).toEqual('cherry')
       expect(serializedState['animal']).toEqual('stoat')
     })
@@ -45,7 +45,7 @@ describe('Port', () => {
     it('handles nested packets', () => {
       const port = genBasicPort()
       port.serializePackets = () => 'mockSerializedPackets'
-      const serializedState = port.serializeState()
+      const serializedState = port.getSerializedState()
       expect(serializedState[port.SYMBOLS.PACKETS]).toEqual(
         'mockSerializedPackets')
     })

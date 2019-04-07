@@ -80,7 +80,7 @@ export class Node {
     }
   }
 
-  serializeState () {
+  getSerializedState () {
     const serializedState = {}
     for (let key of this.state.keys()) {
       let serializedValue
@@ -100,7 +100,7 @@ export class Node {
     for (let portKey of portStates.keys()) {
       const port = this.ports[portKey]
       if (! port) { continue }
-      serializedPortStates[portKey] = port.serializeState()
+      serializedPortStates[portKey] = port.getSerializedState()
     }
     return serializedPortStates
   }

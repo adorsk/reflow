@@ -229,7 +229,7 @@ export class Graph {
     }
   }
 
-  serializeState () {
+  getSerializedState () {
     const serializedState = {}
     for (let key of this.state.keys()) {
       let serializedValue
@@ -251,7 +251,7 @@ export class Graph {
     for (let nodeKey of nodeStates.keys()) {
       const node = this.nodes[nodeKey]
       if (! node) { continue }
-      serializedNodeStates[nodeKey] = node.serializeState()
+      serializedNodeStates[nodeKey] = node.getSerializedState()
     }
     return serializedNodeStates
   }
@@ -262,7 +262,7 @@ export class Graph {
     for (let wireKey of wireStates.keys()) {
       const wire = this.wires[wireKey]
       if (! wire) { continue }
-      serializedWireStates[wireKey] = wire.serializeState()
+      serializedWireStates[wireKey] = wire.getSerializedState()
     }
     return serializedWireStates
   }
@@ -311,10 +311,10 @@ export class Graph {
     return serializedSpec
   }
 
-  toSerialization () {
+  getSerialization () {
     const serialization = {
       serializedSpec: this.getSerializedSpec(),
-      serializedState: this.serializeState(),
+      serializedState: this.getSerializedState(),
     }
     return serialization
   }

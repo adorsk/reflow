@@ -72,12 +72,12 @@ describe('Node', () => {
     })
   })
 
-  describe('serializeState', () => {
+  describe('getSerializedState', () => {
     it('copies values for all normal keys', () => {
       const node = genBasicNode()
       node.state.set('pie', 'cherry')
       node.state.set('animal', 'stoat')
-      const serializedState = node.serializeState()
+      const serializedState = node.getSerializedState()
       expect(serializedState['pie']).toEqual('cherry')
       expect(serializedState['animal']).toEqual('stoat')
     })
@@ -85,7 +85,7 @@ describe('Node', () => {
     it('handles nested portStates', () => {
       const node = genBasicNode()
       node.serializePortStates = () => 'mockSerializedPortStates'
-      const serializedState = node.serializeState()
+      const serializedState = node.getSerializedState()
       expect(serializedState[node.SYMBOLS.PORT_STATES]).toEqual(
         'mockSerializedPortStates')
     })
@@ -97,7 +97,7 @@ describe('Node', () => {
       const expectedSerializedPortStates = {}
       for (let port of _.values(node.getPorts())) {
         const mockSerializedPortState = 'mock:' + port.key
-        port.serializeState = () => mockSerializedPortState
+        port.getSerializedState = () => mockSerializedPortState
         expectedSerializedPortStates[port.key] = mockSerializedPortState
       }
       const actualSerializedPortStates = node.serializePortStates()

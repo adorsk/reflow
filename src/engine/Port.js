@@ -73,7 +73,7 @@ class Port {
     }
   }
 
-  serializeState () {
+  getSerializedState () {
     const serializedState = {}
     for (let key of this.state.keys()) {
       let serializedValue

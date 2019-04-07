@@ -62,7 +62,7 @@ export class Wire {
     }
   }
 
-  serializeState () {
+  getSerializedState () {
     const serializedState = {}
     for (let key of this.state.keys()) {
       let serializedValue

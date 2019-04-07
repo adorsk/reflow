@@ -35,12 +35,12 @@ describe('Wire', () => {
     })
   })
 
-  describe('serializeState', () => {
+  describe('getSerializedState', () => {
     it('copies values for all normal keys', () => {
       const wire = genBasicWire()
       wire.state.set('pie', 'cherry')
       wire.state.set('animal', 'stoat')
-      const serializedState = wire.serializeState()
+      const serializedState = wire.getSerializedState()
       expect(serializedState['pie']).toEqual('cherry')
       expect(serializedState['animal']).toEqual('stoat')
     })
@@ -48,7 +48,7 @@ describe('Wire', () => {
     it('handles nested packets', () => {
       const wire = genBasicWire()
       wire.serializePackets = () => 'mockSerializedPackets'
-      const serializedState = wire.serializeState()
+      const serializedState = wire.getSerializedState()
       expect(serializedState[wire.SYMBOLS.PACKETS]).toEqual(
         'mockSerializedPackets')
     })
