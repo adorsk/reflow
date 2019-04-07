@@ -7,6 +7,7 @@ import {
   memoizedCreateStores,
   PersistentGraphView,
 } from '../utils/graphStory-utils.js'
+import Cryo from '../utils/cryo/cryo.js'
 
 
 storiesOf('GraphFromSpec', module)
@@ -70,8 +71,13 @@ storiesOf('GraphFromSpec', module)
     }
     const origGraph = genBasicGraph()
     const serialization = origGraph.getSerialization()
+    const stringifiedSerialization = Cryo.stringify(serialization)
+    console.log("stringified: ", {stringifiedSerialization})
+    const parsedStringifiedSerialization = Cryo.parse(stringifiedSerialization)
     const graphFactory = async ({store}) => {
-      const graph = await Graph.fromSerialization({serialization})
+      const graph = await Graph.fromSerialization({
+        serialization: parsedStringifiedSerialization,
+      })
       return graph
     }
     return (
