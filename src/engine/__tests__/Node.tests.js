@@ -112,10 +112,11 @@ describe('Node', () => {
       expect(node.getSerializedSpec()).toEqual('mockSpec')
     })
 
-    it('uses specFactoryFn if no ctx.toSpec', () => {
+    it('uses specFactoryFn if no ctx.getSerializedSpec', () => {
       const node = genBasicNode()
       node.specFactoryFn = 'mockSpec'
-      expect(node.getSerializedSpec()).toEqual('mockSpec')
+      const expectedSerializedSpec = { specFactoryFn: node.specFactoryFn }
+      expect(node.getSerializedSpec()).toEqual(expectedSerializedSpec)
     })
   })
 

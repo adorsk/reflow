@@ -162,17 +162,22 @@ export class Wire {
     if (this.ctx.getSerializedSpec) {
       serializedSpec = this.ctx.getSerializedSpec()
     } else {
-      serializedSpec = this.specFactoryFn
+      serializedSpec = { specFactoryFn: this.specFactoryFn }
     }
     return serializedSpec
   }
 }
 
 Wire.deserializeSpec = async (serializedSpec) => {
-  if (typeof serializedSpec === 'function') {
-    return serializedSpec()
+  let spec
+  if (serializedSpec.specFactoryFn) {
+    spec = await serializedSpec.specFactoryFn()
+    spec.specFactoryFn = serializedSpec.specFactoryFn
+    spec.srcCode = serializedSpec.specFactoryFn.srcCode
+  } else {
+    spec = serializedSpec
   }
-  return serializedSpec
+  return spec
 }
 
 export default Wire

@@ -88,19 +88,20 @@ class GraphView extends React.Component {
           store.set({key: posKey, value: pos})
         }}
         onChangeSrcCode={async ({node, code}) => {
-          let nodeSpec, fn
+          let nodeSpec, specFactoryFn
           try {
             const transpiledCode = this.transformer.transform(code).code
-            fn = compileFn(transpiledCode)
+            specFactoryFn = compileFn(transpiledCode)
+            specFactoryFn.srcCode = code
           } catch (err) {
             throw new CompilationError(err)
           }
           try {
-            nodeSpec = await fn()
+            nodeSpec = await specFactoryFn()
+            nodeSpec.specFactoryFn = specFactoryFn
           } catch (err) {
             throw new EvaluationError(err)
           }
-          nodeSpec.srcCode = code
           graph.replaceNodeFromSpec({node, nodeSpec})
         }}
       />

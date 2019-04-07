@@ -38,8 +38,9 @@ storiesOf('GraphFromSpec', module)
         }
       }
       const nodeSpecs = _.mapValues(nodeSpecFactories, (factory, key) => {
+        factory.srcCode = factory.toString()
         const nodeSpec = factory()
-        nodeSpec.srcCode = factory.toString()
+        nodeSpec.specFactoryFn = factory
         return nodeSpec
       })
       graph.addNodeFromSpec({nodeSpec: nodeSpecs.node1})
@@ -57,7 +58,9 @@ storiesOf('GraphFromSpec', module)
         }
       }
       const wireSpecs = _.mapValues(wireSpecFactories, (factory, key) => {
+        factory.srcCode = factory.toString()
         const wireSpec = factory()
+        wireSpec.specFactoryFn = factory
         wireSpec.srcCode = factory.toString()
         return wireSpec
       })
@@ -66,7 +69,7 @@ storiesOf('GraphFromSpec', module)
       return graph
     }
     const origGraph = genBasicGraph()
-    const serialization = origGraph.toSerialization()
+    const serialization = origGraph.getSerialization()
     const graphFactory = async ({store}) => {
       const graph = await Graph.fromSerialization({serialization})
       return graph

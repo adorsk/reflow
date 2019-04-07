@@ -19,6 +19,7 @@ export class Node {
     }, opts.behaviors)
     this.ctx = opts.ctx || {}
     this.specFactoryFn = opts.specFactoryFn
+    this.srcCode = opts.srcCode || _.get(opts, ['specFactoryFn', 'srcCode'])
     this.changed = new signals.Signal()
     this.tickFn = opts.tickFn
     this.setState(opts.state || new Map())
@@ -277,17 +278,22 @@ export class Node {
     if (this.ctx.getSerializedSpec) {
       serializedSpec = this.ctx.getSerializedSpec()
     } else {
-      serializedSpec = this.specFactoryFn
+      serializedSpec = { specFactoryFn: this.specFactoryFn }
     }
     return serializedSpec
   }
 }
 
 Node.deserializeSpec = async (serializedSpec) => {
-  if (typeof serializedSpec === 'function') {
-    return serializedSpec()
+  let spec
+  if (serializedSpec.specFactoryFn) {
+    spec = await serializedSpec.specFactoryFn()
+    spec.specFactoryFn = serializedSpec.specFactoryFn
+    spec.srcCode = serializedSpec.specFactoryFn.srcCode
+  } else {
+    spec = serializedSpec
   }
-  return serializedSpec
+  return spec
 }
 
 Node.fromSpec = (spec) => {
