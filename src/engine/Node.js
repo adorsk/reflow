@@ -188,7 +188,8 @@ export class Node {
   }
 
   getPortsOfType ({ioType}) {
-    return _.filter(this.getPorts(), (port) => (port.ioType === ioType))
+    const ports =_.filter(this.getPorts(), (port) => (port.ioType === ioType))
+    return _.keyBy(ports, 'id')
   }
 
   getOutputPort (portId) {

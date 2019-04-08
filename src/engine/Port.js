@@ -23,13 +23,13 @@ class Port {
     this.setState(opts.state || new Map())
     this.ioType = opts.ioType
     this.wires = []
-    this.init({packets: opts.packets})
+    this.init()
   }
 
-  init ({packets}) {
+  init () {
     if (_.isUndefined(this.state.get('initialized'))) {
-      for (let packet of (packets || [])) {
-        this.pushPacket(packet)
+      for (let value of (this.initialValues || [])) {
+        this.pushValue(value)
       }
       this.state.set('initialized', true)
     }

@@ -64,7 +64,7 @@ export const getInputValues = ({node, inputKeys}) => {
   const inputValues = {}
   for (let inputKey of inputKeys) {
     const port = node.getPort('inputs:' + inputKey)
-    const value = _.get(port.mostRecentPacket, 'data')
+    const value = _.get(port, ['mostRecentPacket', 'data'])
     if (_.isUndefined(value)) {
       throw new InputsError(`'${inputKey}' is undefined`)
     }
