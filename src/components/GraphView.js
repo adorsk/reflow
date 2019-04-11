@@ -8,6 +8,7 @@ import WireView from './WireView.js'
 import { compileFn } from '../utils/index.js'
 import Transformer from '../utils/Transformer.js'
 import { EvaluationError, CompilationError } from '../utils/Errors.js'
+import ObservableMapStore from '../engine/ObservableMapStore.js'
 
 
 class GraphView extends React.Component {
@@ -70,7 +71,8 @@ class GraphView extends React.Component {
   }
 
   renderDraggableNodeView (node) {
-    const { graph, store } = this.props
+    const { graph } = this.props
+    const store = this.getStore()
     const posKey = `${node.id}-pos`
     return (
       <DraggableNodeView
@@ -106,6 +108,17 @@ class GraphView extends React.Component {
         }}
       />
     )
+  }
+
+  getStore () {
+    let { store } = this.props
+    if (! store) {
+      if (! this.store) {
+        this.store = new ObservableMapStore() // dis is hacky :/
+      }
+      store = this.store
+    }
+    return store
   }
 
   renderWireViews ({wires}) {
