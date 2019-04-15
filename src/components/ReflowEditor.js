@@ -3,6 +3,8 @@ import { Button, Divider, List } from 'semantic-ui-react'
 
 import Graph from '../engine/Graph.js'
 import GraphEditor from './GraphEditor.js'
+import GraphView from './GraphView.js'
+import Cryo from '../utils/cryo/cryo.js'
 
 
 class ReflowEditor extends React.Component {
@@ -12,6 +14,8 @@ class ReflowEditor extends React.Component {
     this.state = {
       selectedGraphRecordKey: null,
       selectedGraph: null,
+      currentGraph: null,
+      currentGraphViewStore: null,
     }
   }
 
@@ -33,6 +37,7 @@ class ReflowEditor extends React.Component {
             top: 0;
             bottom: 0;
             border: thin solid gray;
+            overflow: auto;
           }
           `}
         </style>
@@ -68,6 +73,10 @@ class ReflowEditor extends React.Component {
           content="add"
           onClick={this.onClickAddGraphRecordButton.bind(this)}
         />
+        <Button
+          content="load"
+          onClick={this.onClickLoadGraphRecordButton.bind(this)}
+        />
         <Divider />
         {this.renderGraphRecordList()}
       </div>
@@ -84,6 +93,31 @@ class ReflowEditor extends React.Component {
       graphSerialization: graph.getSerialization()
     }
     addGraphRecord({graphRecord})
+  }
+
+  onClickLoadGraphRecordButton () {
+    const fileInput = document.createElement('input')
+    fileInput.setAttribute('type', 'file')
+    const readPromise = new Promise((resolve, reject) => {
+      fileInput.onchange = (evt) => {
+        const file = evt.target.files[0]
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result)
+        reader.readAsText(file)
+      }
+    })
+    fileInput.click()
+    readPromise.then(async (plainText) => {
+      const graphViewSerialization = Cryo.parse(plainText)
+      const graphViewProps = await GraphView.deserializeSerialization({
+        serialization: graphViewSerialization
+      })
+      console.log("gvp: ", graphViewProps)
+      this.setState({
+        currentGraph: graphViewProps.graph,
+        currentGraphViewStore: graphViewProps.store,
+      })
+    })
   }
 
   renderGraphRecordList () {
@@ -128,7 +162,7 @@ class ReflowEditor extends React.Component {
   }
 
   renderRightPanelContent () {
-    const { currentGraph } = this.state
+    const { currentGraph, currentGraphViewStore } = this.state
     if (! currentGraph) { return (<i>no currentGraph</i>) }
     return (
       <div
@@ -138,15 +172,21 @@ class ReflowEditor extends React.Component {
           position: 'relative',
         }}
       >
-        {this.renderGraphEditor({graph: currentGraph})}
+        {
+          this.renderGraphEditor({
+            graph: currentGraph,
+            graphViewStore: currentGraphViewStore,
+          })
+        }
       </div>
     )
   }
 
-  renderGraphEditor ({graph}) {
+  renderGraphEditor ({graph, graphViewStore}) {
     return (
       <GraphEditor
         graph={graph}
+        graphViewStore={graphViewStore}
         style={{
           height: '100%',
           widht: '100%',

@@ -6,7 +6,6 @@ import CodeEditor from './CodeEditor.js'
 import WindowPortal from './WindowPortal.js'
 import PortView from './PortView.js'
 
-import { EvaluationError, CompilationError } from '../utils/Errors.js'
 
 export class NodeView extends React.Component {
   constructor (props) {
@@ -63,7 +62,7 @@ export class NodeView extends React.Component {
         {this.renderTopBar()}
         {this.renderPorts()}
         {this.renderErrors()}
-        {this.renderView()}
+        {this.renderGui()}
         {this.props.showDebug ? this.renderDebug() : null}
       </div>
     )
@@ -211,7 +210,7 @@ export class NodeView extends React.Component {
     )
   }
 
-  renderView () {
+  renderGui () {
     const { node } = this.props
     if (!this.GuiComponent) { return }
     const GuiComponent = this.GuiComponent
@@ -224,7 +223,7 @@ export class NodeView extends React.Component {
         <GuiComponent node={node} />
       </div>
     )
-    const useWindowPortal = node.state.get('useWindowPortal')
+    const usePortalForGui = node.state.get('usePortalForGui')
     const showView = node.state.has('showView') ? node.state.get('showView') : true
     return (
       <div className="view">
@@ -234,7 +233,7 @@ export class NodeView extends React.Component {
               <Button.Group size="mini" compact>
                 <Button
                   icon="clone"
-                  onClick={() => node.state.set('useWindowPortal', !useWindowPortal)}
+                  onClick={() => node.state.set('usePortalForGui', !usePortalForGui)}
                 />
                 <Button
                   icon={showView ? 'hide' : 'eye'}
@@ -244,10 +243,10 @@ export class NodeView extends React.Component {
             </Card.Meta>
             <Card.Description>
               {
-                (useWindowPortal) ? (
+                (usePortalForGui) ? (
                   <WindowPortal
                     windowName={node.id}
-                    onClose={() => node.state.set('useWindowPortal', false)}
+                    onClose={() => node.state.set('usePortalForGui', false)}
                   >
                     {renderGui()}
                   </WindowPortal>

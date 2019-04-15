@@ -9,6 +9,7 @@ import { compileFn } from '../utils/index.js'
 import Transformer from '../utils/Transformer.js'
 import { EvaluationError, CompilationError } from '../utils/Errors.js'
 import ObservableMapStore from '../engine/ObservableMapStore.js'
+import Graph from '../engine/Graph.js'
 
 
 class GraphView extends React.Component {
@@ -212,6 +213,34 @@ class GraphView extends React.Component {
       dest: destPortView.getHandlePagePos(),
     })
   }
+
+  getSerialization () {
+    const { graph } = this.props
+    return {
+      graphSerialization: graph.getSerialization(),
+      storeSerialization: this.getStoreSerialization(),
+    }
+  }
+
+  getStoreSerialization () {
+    let serialization = {}
+    const store = this.getStore()
+    if (store) { serialization = store.toJSON() }
+    console.log("s: ", serialization)
+    return serialization
+  }
+}
+
+GraphView.deserializeSerialization = async ({serialization}) => {
+  const graphViewProps = {
+    graph: await Graph.fromSerialization({
+      serialization: serialization.graphSerialization
+    }),
+    store: new ObservableMapStore({
+      initialValues: serialization.storeSerialization
+    }),
+  }
+  return graphViewProps
 }
 
 export default GraphView

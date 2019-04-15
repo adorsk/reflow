@@ -16,6 +16,9 @@ export class ObservableMapStore {
   set ({key, value}) {
     this.store.set(key, value)
   }
+
+  toJSON () { return this.store.toJSON() }
+  toJS () { return this.store.toJS() }
 }
 
 export default ObservableMapStore
