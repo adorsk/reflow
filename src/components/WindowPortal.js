@@ -18,6 +18,7 @@ class WindowPortal extends React.PureComponent {
       (this.props.windowName || ''),
       'width=600,height=400,left=200,top=200'
     )
+    this.externalWindow.document.title = this.props.windowName
     if (this.props.styles) {
       for (let style of this.props.styles) {
         const styleEl = this.externalWindow.document.createElement('style')
