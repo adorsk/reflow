@@ -105,39 +105,41 @@ export class NodeView extends React.Component {
 
   renderSrcEditorFrob ({node}) {
     const frob = (
-      <>
-      <Button
-        size='mini'
-        compact={true}
-        onClick={() => {
-          node.state.set('srcIsOpen', !(node.state.get('srcIsOpen')))
-        }}
-        content='src'
-      />
-      {
-        (node.state.get('srcIsOpen')) ? (
-          <WindowPortal
-            closeOnUnmount={true}
-            windowName={[node.id, 'src'].join(':')}
-            onClose={() => node.state.set('srcIsOpen', false)}
-            styles={[...CodeEditor.styles]}
-          >
-            <CodeEditor
-              style={{
-                width: '100%',
-                height: 'auto',
-              }}
-              defaultValue={node.srcCode || ''}
-              onSave={async ({code}) => {
-                await this.props.onChangeSrcCode({node, code})
-              }}
-            />
-          </WindowPortal>
-        ) : null 
-      }
-      </>
+      <React.Fragment>
+        <Button
+          size='mini'
+          compact={true}
+          onClick={() => {
+            node.state.set('srcIsOpen', !(node.state.get('srcIsOpen')))
+          }}
+          content='src'
+        />
+        {node.state.get('srcIsOpen') ? this.renderCodeEditorPortal(node) : null}
+      </React.Fragment>
     )
     return frob
+  }
+
+  renderCodeEditorPortal (node) {
+    return (
+      <WindowPortal
+        closeOnUnmount={true}
+        windowName={[node.id, 'src'].join(':')}
+        styles={[...CodeEditor.styles]}
+        beforeUnload={() => node.state.set('srcIsOpen', false)}
+      >
+        <CodeEditor
+          style={{
+            width: '100%',
+            height: 'auto',
+          }}
+          defaultValue={node.srcCode || ''}
+          onSave={async ({code}) => {
+            await this.props.onChangeSrcCode({node, code})
+          }}
+        />
+      </WindowPortal>
+    )
   }
 
   renderPorts () {
@@ -242,7 +244,7 @@ export class NodeView extends React.Component {
                 (usePortalForGui) ? (
                   <WindowPortal
                     windowName={node.id}
-                    onClose={() => node.state.set('usePortalForGui', false)}
+                    beforeUnload={() => node.state.set('usePortalForGui', false)}
                   >
                     {renderGui()}
                   </WindowPortal>

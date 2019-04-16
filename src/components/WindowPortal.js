@@ -34,15 +34,14 @@ class WindowPortal extends React.PureComponent {
       }
     }
     this.externalWindow.document.body.appendChild(this.containerEl)
-    if (this.props.onClose) {
-      this.externalWindow.addEventListener('unload', this.props.onClose)
+    if (this.props.beforeUnload) {
+      this.externalWindow.addEventListener('beforeunload', this.props.beforeUnload)
     }
   }
 
   componentWillUnmount() {
-    if (this.props.closeOnUnmount) {
-      this.externalWindow.close()
-    }
+    if (this.props.beforeUnmount) { this.props.beforeUnmount() }
+    if (this.props.closeOnUnmount) { this.externalWindow.close() }
   }
 }
 

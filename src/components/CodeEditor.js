@@ -34,7 +34,9 @@ class CodeEditor extends React.Component {
           lineNumbers: true,
           matchBrackets: true,
           showCursorWhenSelecting: true,
-          inputStyle: 'contenteditable',
+          // inputStyle is important!
+          // 'contenteditable' inputStyle can result in zombie polls.
+          inputStyle: 'textarea',
           scrollbarStyle: 'native',
           extraKeys: {
             'Ctrl-S': () => this.onSave()
@@ -76,6 +78,11 @@ class CodeEditor extends React.Component {
           }
         }
         check()
+      })
+    }
+    if (_.get(this.props, 'autoFocusOnMount', true)) {
+      readyPromise = readyPromise.then(() => {
+        this.cm.focus()
       })
     }
     if (this.props.afterMount) {

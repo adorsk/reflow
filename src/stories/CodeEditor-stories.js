@@ -40,7 +40,7 @@ storiesOf('CodeEditor', module)
             closeOnUnmount={true}
             windowName={'figgies'}
             styles={[...CodeEditor.styles]}
-            onClose={() => this.setState({visible: false})}
+            beforeUnload={() => this.setState({visible: false})}
           >
             <CodeEditor
               style={{

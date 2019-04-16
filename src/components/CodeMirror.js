@@ -93,14 +93,14 @@ class CodeMirror extends React.Component {
     return {
       keyMap: 'default',
       viewportMargin: Infinity,
-      scrollbarStyle: 'overlay'
+      scrollbarStyle: 'overlay',
     }
   }
 
 	componentWillUnmount () {
 		// is there a lighter-weight way to remove the cm instance?
 		if (this.cm) {
-			this.cm.toTextArea()
+      this.cm.toTextArea()
 		}
 	}
 
