@@ -30,7 +30,7 @@ storiesOf('NodeView', module)
   .add('default', () => {
     const node = Node.fromSpec({
       id: 'node1',
-      srcCode: '',
+      srcCode: 'here is some src yo',
       portSpecs: {
         inputs: {
           in1: {},

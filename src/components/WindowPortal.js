@@ -18,6 +18,21 @@ class WindowPortal extends React.PureComponent {
       (this.props.windowName || ''),
       'width=600,height=400,left=200,top=200'
     )
+    if (this.props.styles) {
+      for (let style of this.props.styles) {
+        const styleEl = this.externalWindow.document.createElement('style')
+        styleEl.setAttribute('type', 'text/css')
+        styleEl.innerHTML = style
+        this.externalWindow.document.head.appendChild(styleEl)
+      }
+    }
+    if (this.props.scripts) {
+      for (let script of this.props.scripts) {
+        const scriptEl = this.externalWindow.document.createElement('script')
+        scriptEl.innerHTML = script
+        this.externalWindow.document.head.appendChild(scriptEl)
+      }
+    }
     this.externalWindow.document.body.appendChild(this.containerEl)
     if (this.props.onClose) {
       this.externalWindow.addEventListener('unload', this.props.onClose)
@@ -25,7 +40,9 @@ class WindowPortal extends React.PureComponent {
   }
 
   componentWillUnmount() {
-    // this.externalWindow.close()
+    if (this.props.closeOnUnmount) {
+      this.externalWindow.close()
+    }
   }
 }
 

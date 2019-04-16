@@ -1,6 +1,6 @@
 import React from 'react'
 import _ from 'lodash'
-import { Button, Card, Message, Popup } from 'semantic-ui-react'
+import { Button, Card, Message } from 'semantic-ui-react'
 
 import CodeEditor from './CodeEditor.js'
 import WindowPortal from './WindowPortal.js'
@@ -102,46 +102,51 @@ export class NodeView extends React.Component {
     return topBar
   }
 
+
   renderSrcEditorFrob ({node}) {
-    const trigger = (
+    const frob = (
+      <>
       <Button
         size='mini'
         compact={true}
         onClick={() => {
-          this.setState({srcPopupIsVisible: !this.state.srcPopupIsVisible})
+          node.state.set('srcIsOpen', !(node.state.get('srcIsOpen')))
         }}
         content='src'
       />
-    )
-    const frob = (
-      <Popup
-        trigger={trigger}
-        content={this.renderSrcEditor({node})}
-        on={null}
-        open={this.state.srcPopupIsVisible}
-        position='bottom left'
-        style={{
-          maxHeight: '300px',
-          overflow: 'auto',
-        }}
-      />
+      {
+        (node.state.get('srcIsOpen')) ? (
+          <WindowPortal
+            closeOnUnmount={true}
+            windowName={[node.id, 'src'].join(':')}
+            onClose={() => node.state.set('srcIsOpen', false)}
+            styles={[...CodeEditor.styles]}
+          >
+            <CodeEditor
+              style={{
+                width: '100%',
+                height: 'auto',
+              }}
+              defaultValue={node.srcCode || ''}
+              onSave={async ({code}) => {
+                await this.props.onChangeSrcCode({node, code})
+              }}
+              afterMount={({cm}) => {
+                // Refresh after initial layout, per...
+                //http://codemirror.977696.n3.nabble.com/codemirror-content-not-visible-in-bootstrap-modal-td4026988.html
+                setTimeout(() => {
+                  cm.refresh()
+                },1)
+                // HERE! Figure out how to get code to focus.
+                // It starts as invisible...
+              }}
+            />
+          </WindowPortal>
+        ) : null 
+      }
+      </>
     )
     return frob
-  }
-
-  renderSrcEditor ({node}) {
-    return (
-      <CodeEditor
-        style={{
-          width: '200px',
-          height: '200px',
-        }}
-        defaultValue={node.srcCode || ''}
-        onSave={async ({code}) => {
-          await this.props.onChangeSrcCode({node, code})
-        }}
-      />
-    )
   }
 
   renderPorts () {

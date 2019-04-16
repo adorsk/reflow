@@ -2,7 +2,15 @@ import React from 'react'
 import 'codemirror/lib/codemirror.css'
 import 'codemirror/mode/jsx/jsx'
 
+
+/* eslint-disable */
+import cmCSS from '!!raw-loader!codemirror/lib/codemirror.css'
+import cmJSX from '!!raw-loader!codemirror/mode/jsx/jsx'
+import cmJS from '!!raw-loader!codemirror/lib/codemirror.js'
+/* eslint-enable */
+
 import CodeMirror from './CodeMirror'
+
 
 class CodeEditor extends React.Component {
   constructor (props) {
@@ -51,6 +59,9 @@ class CodeEditor extends React.Component {
 
   componentDidMount () {
     this.cm = this.cmRef.current.getCodeMirror()
+    if (this.props.afterMount) {
+      this.props.afterMount({cm: this.cm})
+    }
   }
 
   async onSave () {
@@ -65,5 +76,8 @@ class CodeEditor extends React.Component {
     }
   }
 }
+
+CodeEditor.styles = [ cmCSS ]
+CodeEditor.scripts = [ cmJSX, cmJS ]
 
 export default CodeEditor
