@@ -131,15 +131,6 @@ export class NodeView extends React.Component {
               onSave={async ({code}) => {
                 await this.props.onChangeSrcCode({node, code})
               }}
-              afterMount={({cm}) => {
-                // Refresh after initial layout, per...
-                //http://codemirror.977696.n3.nabble.com/codemirror-content-not-visible-in-bootstrap-modal-td4026988.html
-                setTimeout(() => {
-                  cm.refresh()
-                },1)
-                // HERE! Figure out how to get code to focus.
-                // It starts as invisible...
-              }}
             />
           </WindowPortal>
         ) : null 

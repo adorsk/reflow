@@ -1,4 +1,5 @@
 import React from 'react'
+import _ from 'lodash'
 import 'codemirror/lib/codemirror.css'
 import 'codemirror/mode/jsx/jsx'
 
@@ -28,7 +29,7 @@ class CodeEditor extends React.Component {
         ref={this.cmRef}
         defaultValue={this.props.defaultValue}
         style={this.props.style}
-        options={{
+        options={Object.assign({
           mode: 'jsx',
           lineNumbers: true,
           matchBrackets: true,
@@ -38,7 +39,7 @@ class CodeEditor extends React.Component {
           extraKeys: {
             'Ctrl-S': () => this.onSave()
           }
-        }}
+        }, this.props.cmOpts)}
       />
     )
     const errors = []
@@ -59,8 +60,26 @@ class CodeEditor extends React.Component {
 
   componentDidMount () {
     this.cm = this.cmRef.current.getCodeMirror()
+    let readyPromise = Promise.resolve()
+    const autoRefreshOnMount = _.get(this.props, 'autoRefreshOnMount', true)
+    if (autoRefreshOnMount) {
+      readyPromise = new Promise((resolve, reject) => {
+        const delay = 250
+        const check = () => {
+          if (this.cm.display.wrapper.offsetHeight) {
+            if (this.cm.display.lastWrapHeight !== this.cm.display.wrapper.clientHeight) {
+              this.cm.refresh()
+              resolve()
+            }
+          } else {
+            this.cm.state.timeout = setTimeout(check, delay)
+          }
+        }
+        check()
+      })
+    }
     if (this.props.afterMount) {
-      this.props.afterMount({cm: this.cm})
+      readyPromise.then(() => this.props.afterMount({cm: this.cm}))
     }
   }
 
