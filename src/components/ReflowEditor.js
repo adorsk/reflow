@@ -4,7 +4,6 @@ import { Button, Divider, List } from 'semantic-ui-react'
 import Graph from '../engine/Graph.js'
 import GraphEditor from './GraphEditor.js'
 import GraphView from './GraphView.js'
-import Cryo from '../utils/cryo/cryo.js'
 
 
 class ReflowEditor extends React.Component {
@@ -16,6 +15,17 @@ class ReflowEditor extends React.Component {
       selectedGraph: null,
       currentGraph: null,
       currentGraphViewStore: null,
+    }
+  }
+
+  componentDidMount () {
+    if (! this.state.selectedGraphRecordKey) {
+      const graphKey = ['graph', (new Date()).getTime(), Math.random()].join(':')
+      const graph = new Graph({
+        id: graphKey,
+        label: 'graph-' + (new Date()).toISOString(),
+      })
+      this.setState({currentGraph: graph})
     }
   }
 
@@ -108,11 +118,9 @@ class ReflowEditor extends React.Component {
     })
     fileInput.click()
     readPromise.then(async (plainText) => {
-      const graphViewSerialization = Cryo.parse(plainText)
-      const graphViewProps = await GraphView.deserializeSerialization({
-        serialization: graphViewSerialization
+      const graphViewProps = await GraphView.deserializeStringifiedSerialization({
+        stringifiedSerialization: plainText
       })
-      console.log("gvp: ", graphViewProps)
       this.setState({
         currentGraph: graphViewProps.graph,
         currentGraphViewStore: graphViewProps.store,

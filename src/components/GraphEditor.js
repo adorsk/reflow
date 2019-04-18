@@ -4,10 +4,15 @@ import { Button, Divider } from 'semantic-ui-react'
 import { saveAs } from 'file-saver'
 
 import GraphView from './GraphView.js'
-import Cryo from '../utils/cryo/cryo.js'
+import ObservableMapStore from '../engine/ObservableMapStore.js'
 
 
 class GraphEditor extends React.Component {
+
+  static defaultProps = {
+    graphViewStore: new ObservableMapStore(),
+  }
+
   constructor (opts) {
     super(opts)
     this.graphViewRef = React.createRef()
@@ -56,24 +61,27 @@ class GraphEditor extends React.Component {
   renderTopSectionContent ({graph}) {
     return (
       <div>
-        <h3>{graph.id}</h3>
-        {this.renderAddNodeButton({graph})}
-        {this.renderDownloadGraphButton({graph})}
+        <h3>{graph.label}</h3>
+        {this.renderAddNodeButton()}
+        {this.renderSaveButton()}
+        {this.renderDownloadButton()}
         <Divider />
       </div>
     )
   }
 
-  renderAddNodeButton ({graph}) {
+  renderAddNodeButton () {
     return (
       <Button
         content="add node"
         onClick={() => {
-          this.addBlankNodeToGraph({graph})
+          this.addBlankNodeToGraph({graph: this.currentGraph})
         }}
       />
     )
   }
+
+  get currentGraph () { return this.graphViewRef.current.props.graph }
 
   addBlankNodeToGraph ({graph}) {
     const blankNodeSpec = {
@@ -82,23 +90,35 @@ class GraphEditor extends React.Component {
     graph.addNodeFromSpec({nodeSpec: blankNodeSpec})
   }
 
-  renderDownloadGraphButton ({graph}) {
+  renderSaveButton () {
     return (
       <Button
-        content="download"
-        onClick={() => {
-          this.downloadGraphView({graph})
-        }}
+        content="save"
+        onClick={() => this.save()}
       />
     )
   }
 
-  downloadGraphView ({graph}) {
+  save () {
     const graphView = this.graphViewRef.current
-    const graphViewSerialization = graphView.getSerialization()
-    const stringifiedSerialization = Cryo.stringify(graphViewSerialization)
+    const stringifiedSerialization = graphView.getStringifiedSerialization()
+    console.log('save', stringifiedSerialization)
+  }
+
+  renderDownloadButton () {
+    return (
+      <Button
+        content="download"
+        onClick={() => this.generateDownload()}
+      />
+    )
+  }
+
+  generateDownload () {
+    const graphView = this.graphViewRef.current
+    const stringifiedSerialization = graphView.getStringifiedSerialization()
     const blob = new Blob([stringifiedSerialization], {type: 'text/plain'})
-    saveAs(blob, graph.id + '.reflow')
+    saveAs(blob, this.currentGraph.id + '.reflow')
   }
 
   renderBottomSectionContent ({graph}) {
