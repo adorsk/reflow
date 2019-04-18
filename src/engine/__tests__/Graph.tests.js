@@ -157,6 +157,13 @@ describe('Graph', () => {
   })
 
   describe('getSerializedSpec', () => {
+    it('derives expected ctorOpts', () => {
+      const graph = new Graph({id: 'someId', label: 'someLabel'})
+      const serializeGraphSpec = graph.getSerializedSpec()
+      const expectedCtorOpts = {id: graph.id, label: graph.label}
+      expect(serializeGraphSpec.ctorOpts).toEqual(expectedCtorOpts)
+    })
+
     it('derives expected serializedNodeSpecs', () => {
       const graph = new Graph()
       graph.addNodeFromSpec({nodeSpec: { id: 'node1' }})

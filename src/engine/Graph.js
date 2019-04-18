@@ -12,9 +12,10 @@ const SYMBOLS = {
 
 export class Graph {
 
-  constructor ({id, state = new Map()} = {}) {
+  constructor ({id, label, state = new Map()} = {}) {
     this.SYMBOLS = SYMBOLS
     this.id = id || _.uniqueId('graph-')
+    this.label = label || id
     this.setState(state)
     this.wires = {}
     this.nodes = {}
@@ -304,7 +305,10 @@ export class Graph {
       return _.mapValues(keyedItems, (item) => item.getSerializedSpec())
     }
     const serializedSpec = {
-      ctorOpts: { id: this.id },
+      ctorOpts: {
+        id: this.id,
+        label: this.label,
+      },
       serializedNodeSpecs: getSpecSerializationsForItems(this.getNodes()),
       serializedWireSpecs: getSpecSerializationsForItems(this.getWires()),
     }
