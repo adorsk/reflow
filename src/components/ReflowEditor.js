@@ -1,5 +1,6 @@
 import React from 'react'
 import { Button, Divider, List } from 'semantic-ui-react'
+import localforage from 'localforage'
 
 import Graph from '../engine/Graph.js'
 import GraphEditor from './GraphEditor.js'
@@ -8,6 +9,10 @@ import GraphView from './GraphView.js'
 
 class ReflowEditor extends React.Component {
 
+  static defaultProps = {
+    reflowStore: localforage.createInstance({name: 'reflow'}),
+  }
+
   constructor (opts) {
     super(opts)
     this.state = {
@@ -15,6 +20,14 @@ class ReflowEditor extends React.Component {
       selectedGraph: null,
       currentGraph: null,
       currentGraphViewStore: null,
+    }
+    this.actions = {
+      setCurrentGraphViewProps: ({graphViewProps}) => {
+        this.setState({
+          currentGraph: graphViewProps.graph,
+          currentGraphViewStore: graphViewProps.store,
+        })
+      },
     }
   }
 
@@ -193,6 +206,10 @@ class ReflowEditor extends React.Component {
   renderGraphEditor ({graph, graphViewStore}) {
     return (
       <GraphEditor
+        actions={{
+          setCurrentGraphViewProps: this.actions.setCurrentGraphViewProps,
+        }}
+        reflowStore={this.props.reflowStore}
         graph={graph}
         graphViewStore={graphViewStore}
         style={{

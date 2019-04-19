@@ -1,10 +1,11 @@
 import React from 'react'
 import _ from 'lodash'
-import { Button, Divider } from 'semantic-ui-react'
+import { Button, Divider, List, Modal } from 'semantic-ui-react'
 import { saveAs } from 'file-saver'
 
 import GraphView from './GraphView.js'
 import ObservableMapStore from '../engine/ObservableMapStore.js'
+import Cryo from '../utils/cryo/cryo.js'
 
 
 class GraphEditor extends React.Component {
@@ -16,6 +17,10 @@ class GraphEditor extends React.Component {
   constructor (opts) {
     super(opts)
     this.graphViewRef = React.createRef()
+    this.state = {
+      loadFromStoreModalIsVisible: false,
+      keysFromStore: [],
+    }
   }
 
   render () {
@@ -24,6 +29,11 @@ class GraphEditor extends React.Component {
     const topSectionHeight = '60px'
     return (
       <div style={this.props.style}>
+        {
+          (this.state.loadFromStoreModalIsVisible) ? (
+            this.renderLoadFromStoreModal()
+          ): null
+        }
         <div
           style={{
             position: 'relative',
@@ -58,6 +68,41 @@ class GraphEditor extends React.Component {
     )
   }
 
+  renderLoadFromStoreModal () {
+    const { loadingKeysFromStore, keysFromStore } = this.state
+    const content = (
+      (loadingKeysFromStore) ? ("loading...") : (
+        <List>
+          {
+            keysFromStore.map((key) => {
+              return (
+                <List.Item
+                  key={key}
+                  content={key}
+                  onClick={async () => {
+                    const stringifiedSerialization = await (
+                      this.props.reflowStore.getItem(key))
+                    this.setState({loadFromStoreModalIsVisible: false})
+                    this.loadFromStringifiedSerialization(
+                      stringifiedSerialization)
+                  }} />
+              )
+            })
+          }
+        </List>
+      )
+    )
+    return (
+      <Modal
+        onClose={() => this.setState({loadFromStoreModalIsVisible: false})}
+        open={true}
+        size='small'
+      >
+        <Modal.Content>{content}</Modal.Content>
+      </Modal>
+    )
+  }
+
   renderTopSectionContent ({graph}) {
     return (
       <div>
@@ -65,6 +110,8 @@ class GraphEditor extends React.Component {
         {this.renderAddNodeButton()}
         {this.renderSaveButton()}
         {this.renderDownloadButton()}
+        {this.renderLoadFromFileButton()}
+        {this.renderLoadFromStoreButton()}
         <Divider />
       </div>
     )
@@ -93,7 +140,7 @@ class GraphEditor extends React.Component {
   renderSaveButton () {
     return (
       <Button
-        content="save"
+        content="save to store"
         onClick={() => this.save()}
       />
     )
@@ -101,8 +148,9 @@ class GraphEditor extends React.Component {
 
   save () {
     const graphView = this.graphViewRef.current
-    const stringifiedSerialization = graphView.getStringifiedSerialization()
-    console.log('save', stringifiedSerialization)
+    const serialization = graphView.getSerialization()
+    const stringifiedSerialization = Cryo.stringify(serialization)
+    this.props.reflowStore.setItem(serialization.key, stringifiedSerialization)
   }
 
   renderDownloadButton () {
@@ -116,9 +164,62 @@ class GraphEditor extends React.Component {
 
   generateDownload () {
     const graphView = this.graphViewRef.current
-    const stringifiedSerialization = graphView.getStringifiedSerialization()
+    const serialization = graphView.getSerialization()
+    const stringifiedSerialization = Cryo.stringify(serialization)
     const blob = new Blob([stringifiedSerialization], {type: 'text/plain'})
     saveAs(blob, this.currentGraph.id + '.reflow')
+  }
+
+  renderLoadFromFileButton () {
+    return (
+      <Button
+        content="load from file"
+        onClick={this.onClickLoadFromFileButton.bind(this)}
+      />
+    )
+  }
+
+  onClickLoadFromFileButton () {
+    const fileInput = document.createElement('input')
+    fileInput.setAttribute('type', 'file')
+    const readPromise = new Promise((resolve, reject) => {
+      fileInput.onchange = (evt) => {
+        const file = evt.target.files[0]
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result)
+        reader.readAsText(file)
+      }
+    })
+    fileInput.click()
+    readPromise.then((stringifiedSerialization) => {
+      return this.loadFromStringifiedSerialization(stringifiedSerialization)
+    })
+  }
+
+  async loadFromStringifiedSerialization (stringifiedSerialization) {
+    const serialization = Cryo.parse(stringifiedSerialization)
+    const graphViewProps = await GraphView.deserializeSerialization({
+      serialization
+    })
+    this.props.actions.setCurrentGraphViewProps({graphViewProps})
+  }
+
+  renderLoadFromStoreButton () {
+    return (
+      <Button
+        content="load from store"
+        onClick={this.onClickLoadFromStoreButton.bind(this)}
+      />
+    )
+  }
+
+  async onClickLoadFromStoreButton () {
+    this.setState({
+      loadFromStoreModalIsVisible: true,
+      loadingKeysFromStore: true
+    })
+    const keysFromStore = await this.props.reflowStore.keys()
+    this.setState({keysFromStore, loadingKeysFromStore: false})
   }
 
   renderBottomSectionContent ({graph}) {

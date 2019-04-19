@@ -10,7 +10,6 @@ import Transformer from '../utils/Transformer.js'
 import { EvaluationError, CompilationError } from '../utils/Errors.js'
 import ObservableMapStore from '../engine/ObservableMapStore.js'
 import Graph from '../engine/Graph.js'
-import Cryo from '../utils/cryo/cryo.js'
 
 
 class GraphView extends React.Component {
@@ -218,6 +217,7 @@ class GraphView extends React.Component {
   getSerialization () {
     const { graph } = this.props
     return {
+      key: graph.id,
       graphSerialization: graph.getSerialization(),
       storeSerialization: this.getStoreSerialization(),
     }
@@ -227,12 +227,7 @@ class GraphView extends React.Component {
     let serialization = {}
     const store = this.getStore()
     if (store) { serialization = store.toJSON() }
-    console.log("s: ", serialization)
     return serialization
-  }
-
-  getStringifiedSerialization () {
-    return Cryo.stringify(this.getSerialization())
   }
 }
 
@@ -246,11 +241,6 @@ GraphView.deserializeSerialization = async ({serialization}) => {
     }),
   }
   return graphViewProps
-}
-
-GraphView.deserializeStringifiedSerialization = ({stringifiedSerialization}) => {
-  const serialization = Cryo.parse(stringifiedSerialization)
-  return GraphView.deserializeSerialization({serialization})
 }
 
 export default GraphView
