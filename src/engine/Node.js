@@ -13,6 +13,7 @@ export class Node {
   constructor (opts = {}) {
     this.SYMBOLS = SYMBOLS
     this.id = opts.id || _.uniqueId('node-')
+    this.label = opts.label
     this.behaviors = Object.assign({
       drainIncomingHotWiresBeforeTick: true,
       quenchHotInputsAfterTick: true,

@@ -20,11 +20,6 @@ export function stringToHashCode (s) {
 }
 
 export function compileFn (fnString) {
-  console.log("fnS: ", fnString)
-  const fnBody = fnString.slice(
-    fnString.indexOf("{") + 1,
-    fnString.lastIndexOf("}")
-  )
-  const fn = new Function(fnBody) // eslint-disable-line
+  const fn = eval(fnString) // eslint-disable-line
   return fn
 }
