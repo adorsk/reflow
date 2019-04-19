@@ -117,10 +117,12 @@ export class NodeView extends React.Component {
       <WindowPortal
         closeOnUnmount={false}
         windowName={[node.id, 'src'].join(':')}
-        styles={[...CodeEditor.styles]}
+        styles={[...Object.values(CodeEditor.styles)]}
+        scripts={[...Object.values(CodeEditor.scripts)]}
         beforeUnload={() => node.state.set('srcIsOpen', false)}
       >
         <CodeEditor
+          cmOpts={{keyMap: 'vim'}}
           style={{
             width: '100%',
             height: 'auto',

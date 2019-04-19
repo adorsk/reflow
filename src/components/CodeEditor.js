@@ -2,12 +2,13 @@ import React from 'react'
 import _ from 'lodash'
 import 'codemirror/lib/codemirror.css'
 import 'codemirror/mode/jsx/jsx'
+import 'codemirror/keymap/vim.js'
 
 
 /* eslint-disable */
 import cmCSS from '!!raw-loader!codemirror/lib/codemirror.css'
 import cmJSX from '!!raw-loader!codemirror/mode/jsx/jsx'
-import cmJS from '!!raw-loader!codemirror/lib/codemirror.js'
+import cmVimKeyMapJS from '!!raw-loader!codemirror/keymap/vim.js'
 /* eslint-enable */
 
 import CodeMirror from './CodeMirror'
@@ -82,6 +83,7 @@ class CodeEditor extends React.Component {
     }
     if (_.get(this.props, 'autoFocusOnMount', true)) {
       readyPromise = readyPromise.then(() => {
+        this.cm.onSave = this.onSave.bind(this)
         this.cm.focus()
       })
     }
@@ -103,7 +105,7 @@ class CodeEditor extends React.Component {
   }
 }
 
-CodeEditor.styles = [ cmCSS ]
-CodeEditor.scripts = [ cmJSX, cmJS ]
+CodeEditor.styles = { cmCSS }
+CodeEditor.scripts = { cmJSX, cmVimKeyMapJS }
 
 export default CodeEditor

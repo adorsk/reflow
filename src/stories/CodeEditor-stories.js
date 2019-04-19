@@ -9,6 +9,17 @@ storiesOf('CodeEditor', module)
   .add('default', () => {
     return (<CodeEditor defaultValue={'some src'}/>)
   })
+  .add('vim', () => {
+    return (
+      <CodeEditor
+        defaultValue={'some src'}
+        cmOpts={{keyMap: 'vim'}}
+        onSave={({code}) => {
+          console.log('onSave', code)
+        }}
+      />
+    )
+  })
   .add('portal', () => {
 
     class PortalLauncher extends React.Component {
