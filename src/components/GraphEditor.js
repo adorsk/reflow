@@ -6,6 +6,7 @@ import { saveAs } from 'file-saver'
 import GraphView from './GraphView.js'
 import ObservableMapStore from '../engine/ObservableMapStore.js'
 import Cryo from '../utils/cryo/cryo.js'
+import dedent from '../utils/dedent.js'
 
 
 class GraphEditor extends React.Component {
@@ -131,10 +132,26 @@ class GraphEditor extends React.Component {
   get currentGraph () { return this.graphViewRef.current.props.graph }
 
   addBlankNodeToGraph ({graph}) {
+    const nodeId = _.uniqueId('node:')
     const blankNodeSpec = {
-      label: _.uniqueId('node:'),
+      id: nodeId,
+      label: nodeId,
+      srcCode: this.generateNodeSrcBoilerplateCode({nodeId})
     }
     graph.addNodeFromSpec({nodeSpec: blankNodeSpec})
+  }
+
+  generateNodeSrcBoilerplateCode ({nodeId}) {
+    const boilerplateCode = dedent(`
+    async () => {
+      const nodeSpec = {
+        id: '${nodeId}',
+        label: '${nodeId}',
+      }
+      return nodeSpec
+    }
+    `)
+    return boilerplateCode
   }
 
   renderSaveButton () {

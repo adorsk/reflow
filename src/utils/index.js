@@ -20,6 +20,7 @@ export function stringToHashCode (s) {
 }
 
 export function compileFn (fnString) {
+  console.log("fnS: ", fnString)
   const fnBody = fnString.slice(
     fnString.indexOf("{") + 1,
     fnString.lastIndexOf("}")
