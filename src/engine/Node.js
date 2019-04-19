@@ -43,6 +43,7 @@ export class Node {
   }
 
   setState (state) {
+    console.log("s: ", state)
     // unbind prev state
     if (this[this.SYMBOLS.DISPOSER]) { this[this.SYMBOLS.DISPOSER]() }
     state = (state.observe) ? state : observable.map(state)

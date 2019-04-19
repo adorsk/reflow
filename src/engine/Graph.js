@@ -106,15 +106,11 @@ export class Graph {
 
   getWires () { return this.wires }
 
-  addNodeFromSpec ({nodeSpec, opts}) {
+  addNodeFromSpec ({nodeSpec, state, opts}) {
+    state = state || new Map()
     const nodeStates = this.state.get(this.SYMBOLS.NODE_STATES)
-    if (! nodeStates.has(nodeSpec.id)) {
-      nodeStates.set(nodeSpec.id, new Map())
-    }
-    const node = Node.fromSpec({
-      ...nodeSpec,
-      state: nodeStates.get(nodeSpec.id),
-    })
+    nodeStates.set(nodeSpec.id, state)
+    const node = Node.fromSpec({...nodeSpec, state})
     this.addNode(node, opts)
     return node
   }
@@ -130,6 +126,7 @@ export class Graph {
 
   removeNode ({nodeId}) {
     this.nodes[nodeId].unmount()
+    this.state.get(this.SYMBOLS.NODE_STATES).delete(nodeId)
     delete this.nodes[nodeId]
   }
 
@@ -188,8 +185,9 @@ export class Graph {
   }
 
   replaceNodeFromSpec ({node, nodeSpec}) {
+    const state = node.state
     this.removeNode({nodeId: node.id})
-    this.addNodeFromSpec({nodeSpec})
+    this.addNodeFromSpec({nodeSpec, state})
   }
 
   clearState () {

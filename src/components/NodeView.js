@@ -14,7 +14,6 @@ export class NodeView extends React.Component {
       nodeVersion: 0,
       srcPopupIsVisible: false,
     }
-    this.GuiComponent = this.getGuiComponent({node: props.node})
     this.portViews = {
       inputs: {},
       outputs: {},
@@ -29,13 +28,6 @@ export class NodeView extends React.Component {
     }, 0)
     node.changed.add(this.onNodeChanged)
     if (this.props.afterMount) { this.props.afterMount(this) }
-  }
-
-  getGuiComponent ({node}) {
-    if (node.ctx && node.ctx.getGuiComponent) {
-      return node.ctx.getGuiComponent({node, React})
-    }
-    return null
   }
 
   componentWillUnmount () {
@@ -123,7 +115,7 @@ export class NodeView extends React.Component {
   renderCodeEditorPortal (node) {
     return (
       <WindowPortal
-        closeOnUnmount={true}
+        closeOnUnmount={false}
         windowName={[node.id, 'src'].join(':')}
         styles={[...CodeEditor.styles]}
         beforeUnload={() => node.state.set('srcIsOpen', false)}
@@ -210,8 +202,8 @@ export class NodeView extends React.Component {
 
   renderGui () {
     const { node } = this.props
-    if (!this.GuiComponent) { return }
-    const GuiComponent = this.GuiComponent
+    const GuiComponent = this.getGuiComponent({node})
+    if (! GuiComponent) { return null }
     const renderGui = () => (
       <div
         style={{
@@ -255,6 +247,13 @@ export class NodeView extends React.Component {
         </Card>
       </div>
     )
+  }
+
+  getGuiComponent ({node}) {
+    if (node.ctx && node.ctx.getGuiComponent) {
+      return node.ctx.getGuiComponent({node, React})
+    }
+    return null
   }
 
   renderDebug () {
