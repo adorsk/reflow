@@ -1,3 +1,7 @@
+import Transformer from './Transformer.js'
+
+const transformer = new Transformer()
+
 export const getPagePos = (el) => {
   let x = 0
   let y = 0
@@ -20,6 +24,20 @@ export function stringToHashCode (s) {
 }
 
 export function compileFn (fnString) {
-  const fn = eval(fnString) // eslint-disable-line
-  return fn
+  try {
+    const fn = eval(fnString) // eslint-disable-line
+    return fn
+  } catch (err) {
+    throw new Error([err, "fnString:\n" + fnString].join("\n"))
+  }
+}
+
+export function transformAndCompileCode (code) {
+  try {
+    const transpiled = transformer.transform(code).code
+    const compiled = eval(transpiled) // eslint-disable-line
+    return compiled
+  } catch (err) {
+    throw new Error([err, "code:\n" + code].join("\n"))
+  }
 }

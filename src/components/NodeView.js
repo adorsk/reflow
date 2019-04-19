@@ -33,7 +33,7 @@ export class NodeView extends React.Component {
 
   getGuiComponent ({node}) {
     if (node.ctx && node.ctx.getGuiComponent) {
-      return node.ctx.getGuiComponent({node})
+      return node.ctx.getGuiComponent({node, React})
     }
     return null
   }

@@ -5,7 +5,13 @@ class Transformer {
   transform (code) {
     const beginComment = '//BEGIN'
     const markedCode = [beginComment, code].join("\n")
-    let transformed = transform(markedCode, {transforms: ['jsx']})
+    let transformed = transform(
+      markedCode,
+      {
+        transforms: ['jsx'],
+        production: true,
+      }
+    )
     return transformed
   }
 }

@@ -7,6 +7,7 @@ import GraphView from './GraphView.js'
 import ObservableMapStore from '../engine/ObservableMapStore.js'
 import Cryo from '../utils/cryo/cryo.js'
 import dedent from '../utils/dedent.js'
+import { transformAndCompileCode } from '../utils/index.js'
 
 
 class GraphEditor extends React.Component {
@@ -131,14 +132,13 @@ class GraphEditor extends React.Component {
 
   get currentGraph () { return this.graphViewRef.current.props.graph }
 
-  addBlankNodeToGraph ({graph}) {
+  async addBlankNodeToGraph ({graph}) {
     const nodeId = _.uniqueId('node:')
-    const blankNodeSpec = {
-      id: nodeId,
-      label: nodeId,
-      srcCode: this.generateNodeSrcBoilerplateCode({nodeId})
-    }
-    graph.addNodeFromSpec({nodeSpec: blankNodeSpec})
+    const specFactorySrcCode = this.generateNodeSrcBoilerplateCode({nodeId})
+    const specFactory = transformAndCompileCode(specFactorySrcCode)
+    const nodeSpec = await specFactory()
+    nodeSpec.srcCode = specFactorySrcCode
+    graph.addNodeFromSpec({nodeSpec})
   }
 
   generateNodeSrcBoilerplateCode ({nodeId}) {
@@ -147,6 +147,17 @@ class GraphEditor extends React.Component {
       const nodeSpec = {
         id: '${nodeId}',
         label: '${nodeId}',
+        ctx: {
+          getGuiComponent: ({node, React}) => {
+            class GuiComponent extends React.Component {
+              render () {
+                const { node } = this.props
+                return (<div>{node.label}</div>)
+              }
+            }
+            return GuiComponent
+          },
+        }
       }
       return nodeSpec
     }
