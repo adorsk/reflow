@@ -49,6 +49,7 @@ class CodeMirror extends React.Component {
 	componentDidMount () {
 		const cmInstance = this.getCodeMirrorInstance()
     cmInstance.commands.save = function (cm) {
+      console.log('saveo')
       if (cm.onSave) { cm.onSave() }
     }
     this.cm = cmInstance.fromTextArea(

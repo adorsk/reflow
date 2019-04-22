@@ -20,7 +20,7 @@ export class Node {
     }, opts.behaviors)
     this.ctx = opts.ctx || {}
     this.specFactoryFn = opts.specFactoryFn
-    this.srcCode = opts.srcCode || _.get(opts, ['specFactoryFn', 'srcCode'])
+    this.srcCode = opts.srcCode || _.get(this.specFactoryFn, 'srcCode')
     this.changed = new signals.Signal()
     this.tickFn = opts.tickFn
     this.setState(opts.state || new Map())

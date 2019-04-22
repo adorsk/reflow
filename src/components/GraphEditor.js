@@ -83,7 +83,12 @@ class GraphEditor extends React.Component {
                   content={key}
                   onClick={async () => {
                     const stringifiedSerialization = await (
-                      this.props.reflowStore.getItem(key))
+                      this.props.reflowStore.getItem(key)
+                    )
+                    console.log(
+                      "loading from store: ",
+                      {stringifiedSerialization}
+                    )
                     this.setState({loadFromStoreModalIsVisible: false})
                     this.loadFromStringifiedSerialization(
                       stringifiedSerialization)
@@ -137,7 +142,8 @@ class GraphEditor extends React.Component {
     const specFactorySrcCode = this.generateNodeSrcBoilerplateCode({nodeId})
     const specFactory = transformAndCompileCode(specFactorySrcCode)
     const nodeSpec = await specFactory()
-    nodeSpec.srcCode = specFactorySrcCode
+    specFactory.srcCode = specFactorySrcCode
+    nodeSpec.specFactoryFn = specFactory
     graph.addNodeFromSpec({nodeSpec})
   }
 
@@ -179,6 +185,10 @@ class GraphEditor extends React.Component {
     const serialization = graphView.getSerialization()
     const stringifiedSerialization = Cryo.stringify(serialization)
     this.props.reflowStore.setItem(serialization.key, stringifiedSerialization)
+    console.log(
+      "saved to store",
+      {key: serialization.key, value: stringifiedSerialization}
+    )
   }
 
   renderDownloadButton () {
