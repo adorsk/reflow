@@ -1,13 +1,17 @@
 import React from 'react'
 import { storiesOf } from '@storybook/react'
 
-import ReflowEditorContainer from './ReflowEditorContainer.js'
-import graphStore from './graphStore.js'
+import ReflowEditor from '../../components/ReflowEditor.js'
 
 
 storiesOf('ReflowEditor', module)
   .add('default', () => {
     return (
-      <ReflowEditorContainer graphStore={graphStore} />
+      <ReflowEditor
+        style={{
+          height: '100vh',
+          width: '100vw',
+        }}
+      />
     )
   })
