@@ -1,11 +1,15 @@
 import React from 'react'
 import _ from 'lodash'
 import 'codemirror/lib/codemirror.css'
+import 'codemirror/addon/dialog/dialog.css'
+import 'codemirror/addon/dialog/dialog.js'
 import 'codemirror/mode/jsx/jsx'
 import 'codemirror/keymap/vim.js'
 
 
 /* eslint-disable */
+import dialogCSS from '!!raw-loader!codemirror/addon/dialog/dialog.css'
+import dialogJS from '!!raw-loader!codemirror/addon/dialog/dialog.js'
 import cmCSS from '!!raw-loader!codemirror/lib/codemirror.css'
 import cmJSX from '!!raw-loader!codemirror/mode/jsx/jsx'
 import cmVimKeyMapJS from '!!raw-loader!codemirror/keymap/vim.js'
@@ -70,10 +74,8 @@ class CodeEditor extends React.Component {
         const delay = 250
         const check = () => {
           if (this.cm.display.wrapper.offsetHeight) {
-            if (this.cm.display.lastWrapHeight !== this.cm.display.wrapper.clientHeight) {
-              this.cm.refresh()
-              resolve()
-            }
+            this.cm.refresh()
+            resolve()
           } else {
             this.cm.state.timeout = setTimeout(check, delay)
           }
@@ -105,7 +107,7 @@ class CodeEditor extends React.Component {
   }
 }
 
-CodeEditor.styles = { cmCSS }
-CodeEditor.scripts = { cmJSX, cmVimKeyMapJS }
+CodeEditor.styles = { cmCSS, dialogCSS }
+CodeEditor.scripts = { cmJSX, cmVimKeyMapJS, dialogJS }
 
 export default CodeEditor
