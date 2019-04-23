@@ -102,6 +102,7 @@ class CodeMirror extends React.Component {
   }
 
 	componentWillUnmount () {
+    this._isUnmounting = true
 		// is there a lighter-weight way to remove the cm instance?
 		if (this.cm) {
       this.cm.toTextArea()
@@ -143,6 +144,7 @@ class CodeMirror extends React.Component {
 	}
 
 	focusChanged (focused) {
+    if (this._isUnmounting) { return }
 		this.setState({isFocused: focused})
 		this.props.onFocusChange && this.props.onFocusChange(focused)
 	}
