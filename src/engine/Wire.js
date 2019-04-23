@@ -19,6 +19,7 @@ export class Wire {
     this.ctx = opts.ctx || {}
     this.id = opts.id
     this.specFactoryFn = opts.specFactoryFn
+    this.srcCode = opts.srcCode || _.get(this.specFactoryFn, 'srcCode')
     this.src = opts.src
     this.dest = opts.dest
     this.srcCode = opts.srcCode

@@ -8,6 +8,7 @@ import ObservableMapStore from '../engine/ObservableMapStore.js'
 import Cryo from '../utils/cryo/cryo.js'
 import dedent from '../utils/dedent.js'
 import { transformAndCompileCode } from '../utils/index.js'
+import CodeEditor from './CodeEditor.js'
 
 
 class GraphEditor extends React.Component {
@@ -20,7 +21,9 @@ class GraphEditor extends React.Component {
     super(opts)
     this.graphViewRef = React.createRef()
     this.state = {
+      currentWireSpec: null,
       loadFromStoreModalIsVisible: false,
+      wireModalIsVisible: false,
       keysFromStore: [],
     }
   }
@@ -33,22 +36,25 @@ class GraphEditor extends React.Component {
       <div style={this.props.style}>
         {
           (this.state.loadFromStoreModalIsVisible) ? (
-            this.renderLoadFromStoreModal()
-          ): null
+            this.renderLoadFromStoreModal()): null
+        }
+        {
+          (this.state.wireModalIsVisible) ? (
+            this.renderWireModal()): null
         }
         <div
           style={{
             position: 'relative',
             height: '100%',
             width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
           <div
             style={{
-              position: 'absolute',
-              top: 0,
               width: '100%',
-              height: topSectionHeight,
+              flex: `0 0 ${topSectionHeight}`
             }}
           >
             {this.renderTopSectionContent({graph})}
@@ -56,10 +62,8 @@ class GraphEditor extends React.Component {
 
           <div
             style={{
-              position: 'absolute',
-              top: topSectionHeight,
               width: '100%',
-              bottom: 0,
+              flex: '1 1 auto',
             }}
           >
             {this.renderBottomSectionContent({graph})}
@@ -115,6 +119,7 @@ class GraphEditor extends React.Component {
       <div>
         <h3>{graph.label}</h3>
         {this.renderAddNodeButton()}
+        {this.renderAddWireButton()}
         {this.renderSaveButton()}
         {this.renderDownloadButton()}
         {this.renderLoadFromFileButton()}
@@ -138,7 +143,7 @@ class GraphEditor extends React.Component {
   get currentGraph () { return this.graphViewRef.current.props.graph }
 
   async addBlankNodeToGraph ({graph}) {
-    const nodeId = _.uniqueId('node:')
+    const nodeId = _.uniqueId('node-')
     const specFactorySrcCode = this.generateNodeSrcBoilerplateCode({nodeId})
     const specFactory = transformAndCompileCode(specFactorySrcCode)
     const nodeSpec = await specFactory()
@@ -169,6 +174,80 @@ class GraphEditor extends React.Component {
     }
     `)
     return boilerplateCode
+  }
+
+  renderAddWireButton () {
+    return (
+      <Button
+        content="add wire"
+        onClick={async () => {
+          this.setState({wireModalIsVisible: true})
+          const blankWireSpec = await this.generateBlankWireSpec()
+          this.setState({currentWireSpec: blankWireSpec})
+        }}
+      />
+    )
+  }
+
+  async generateBlankWireSpec () {
+    const specFactorySrcCode = dedent(`
+    async () => {
+      const wireSpec = {
+        src: 'srcNodeId:outPortId',
+        dest: 'destNodeId:inPortId',
+      }
+      return wireSpec
+    }
+    `)
+    const wireSpec = this.createWireSpecFromSrcCode(specFactorySrcCode)
+    return wireSpec
+  }
+
+  async createWireSpecFromSrcCode (srcCode) {
+    const specFactory = transformAndCompileCode(srcCode)
+    specFactory.srcCode = srcCode
+    const wireSpec = await specFactory()
+    wireSpec.specFactoryFn = specFactory
+    return wireSpec
+  }
+
+  renderWireModal () {
+    const { currentWireSpec } = this.state
+    return (
+      <Modal
+        onClose={() => this.setState({wireModalIsVisible: false})}
+        open={true}
+        size='small'
+        closeOnEscape={false}
+      >
+        <Modal.Content>
+          {
+            currentWireSpec ? (
+              this.renderWireSpecEditor({wireSpec: currentWireSpec})
+            ) : null
+          }
+        </Modal.Content>
+      </Modal>
+    )
+  }
+
+  renderWireSpecEditor ({wireSpec}) {
+    return (
+      <CodeEditor
+        cmOpts={{keyMap: 'vim'}}
+        style={{
+          width: '100%',
+          minHeight: '300px',
+        }}
+        defaultValue={wireSpec.specFactoryFn.srcCode}
+        onSave={async ({code}) => {
+          console.log('yo')
+          const wireSpec = await this.createWireSpecFromSrcCode(code)
+          console.log("ws; ", wireSpec)
+          this.currentGraph.addWireFromSpec({wireSpec})
+        }}
+      />
+    )
   }
 
   renderSaveButton () {
