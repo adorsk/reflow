@@ -191,12 +191,16 @@ class GraphView extends React.Component {
   }
 
   updateWireViews () {
+    const containerPagePos = _.pick(
+      this.wiresContainerRef.current.getBoundingClientRect(),
+      ['x', 'y']
+    )
     for (let wireView of Object.values(this.wireViews)) {
-      this.updateWireViewPos({wireView})
+      this.updateWireViewPos({wireView, containerPagePos})
     }
   }
 
-  updateWireViewPos ({wireView}) {
+  updateWireViewPos ({wireView, containerPagePos}) {
     const wire = wireView.getWire()
     const srcNodeView = this.nodeViews[wire.src.node.id]
     const srcPortView = srcNodeView.getPortView({
@@ -209,9 +213,23 @@ class GraphView extends React.Component {
       portId: wire.dest.port.id,
     })
     wireView.setPositions({
-      src: srcPortView.getHandlePagePos(),
-      dest: destPortView.getHandlePagePos(),
+      src: this.getOffsetPos({
+        absPos: srcPortView.getHandlePagePos(),
+        refPos: containerPagePos
+      }),
+      dest: this.getOffsetPos({
+        absPos: destPortView.getHandlePagePos(),
+        refPos: containerPagePos
+      }),
     })
+  }
+
+  getOffsetPos ({absPos, refPos}) {
+    const offsetPos = {
+      x: absPos.x - refPos.x,
+      y: absPos.y - refPos.y,
+    }
+    return offsetPos
   }
 
   getSerialization () {
