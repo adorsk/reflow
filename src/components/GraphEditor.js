@@ -89,10 +89,6 @@ class GraphEditor extends React.Component {
                     const stringifiedSerialization = await (
                       this.props.reflowStore.getItem(key)
                     )
-                    console.log(
-                      "loading from store: ",
-                      {stringifiedSerialization}
-                    )
                     this.setState({loadFromStoreModalIsVisible: false})
                     this.loadFromStringifiedSerialization(
                       stringifiedSerialization)
@@ -241,9 +237,7 @@ class GraphEditor extends React.Component {
         }}
         defaultValue={wireSpec.specFactoryFn.srcCode}
         onSave={async ({code}) => {
-          console.log('yo')
           const wireSpec = await this.createWireSpecFromSrcCode(code)
-          console.log("ws; ", wireSpec)
           this.currentGraph.addWireFromSpec({wireSpec})
         }}
       />

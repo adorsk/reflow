@@ -16,7 +16,7 @@ class DraggableItem extends React.Component {
 
   render () {
     const child = React.Children.only(this.props.children)
-    const pos = this.props.pos || child.props.pos || {x: 0, y: 0}
+    const { pos } = this.props
     return React.cloneElement(child, {
       ref: this.rootRef,
       dragHandleRef: this.dragHandleRef,
@@ -45,9 +45,7 @@ class DraggableItem extends React.Component {
 
   componentWillUnmount () {
     if (!this.props.beforeUnmount) { return }
-    try {
-      this.props.beforeUnmount(this)
-    }
+    try { this.props.beforeUnmount(this) }
     catch (e) {}
   }
 }
@@ -56,19 +54,14 @@ class DragContainer extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
-      draggableItemPositions: {}
+      modified: 0,
+      childItemPositions: {}
     }
     this.counter = 0
     this.containerRef = React.createRef()
     this.avatarRef = React.createRef()
     this.childItems = {}
-
-    // Set initial positions.
-    for (let child of React.Children.toArray(this.props.children)) {
-      if (child.props.pos) {
-        this.state.draggableItemPositions[child.key] = child.props.pos
-      }
-    }
+    this.childPositions = {}
   }
 
   componentDidMount () {
@@ -155,16 +148,19 @@ class DragContainer extends React.Component {
 
   renderDraggableChild (child) {
     const key = child.key
+    const pos = this.getChildPos(key) || child.props.pos || {x: 0, y: 0}
     return (
       <DraggableItem
         key={key}
-        pos={this.getChildPos(key)}
+        pos={pos}
         afterMount={(draggableItem) => {
           this.childItems[key] = draggableItem
+          this.setChildPos({key, pos})
           this.dragifyDraggableItem({draggableItem, key})
         }}
         beforeUnmount={() => {
           interact(this.childItems[key].current).unset()
+          this.deleteChildPos(key)
           delete this.childItems[key]
         }}
         onDragEnd={child && child.props.onDragEnd}
@@ -196,7 +192,7 @@ class DragContainer extends React.Component {
         this._dragMgr.avatar.startPos = startPos
       },
       onend: () => {
-        const currentPos = this.getChildPos(key) || {x: 0, y: 0}
+        const currentPos = this.getChildPos(key)
         const avatar = this._dragMgr.avatar
         const nextPos = _.mapValues(currentPos, (curValue, xy) => {
           const delta = avatar.pos[xy] - avatar.startPos[xy]
@@ -213,16 +209,19 @@ class DragContainer extends React.Component {
   }
 
   getChildPos (key) {
-    return _.get(this.state.draggableItemPositions, key)
+    return this.childPositions[key]
   }
 
   setChildPos ({key, pos}) {
-    this.setState({
-      draggableItemPositions: {
-        ...this.state.draggableItemPositions,
-        [key]: pos
-      }
-    })
+    const changed = (this.childPositions[key] !== pos)
+    if (changed) {
+      this.childPositions[key] = pos
+      this.setState({modified: Date.now()})
+    }
+  }
+
+  deleteChildPos (key) {
+    delete this.childPositions[key]
   }
 
   onDragEnd ({draggableItem, key, pos}) {
