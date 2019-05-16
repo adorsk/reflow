@@ -11,6 +11,8 @@ import { EvaluationError, CompilationError } from '../utils/Errors.js'
 import ObservableMapStore from '../engine/ObservableMapStore.js'
 import Graph from '../engine/Graph.js'
 
+import reflowCtx from '../utils/reflowCtx.js'
+
 
 class GraphView extends React.Component {
   constructor (props) {
@@ -100,7 +102,7 @@ class GraphView extends React.Component {
             throw new CompilationError(err)
           }
           try {
-            nodeSpec = await specFactoryFn()
+            nodeSpec = await specFactoryFn({reflowCtx})
             nodeSpec.specFactoryFn = specFactoryFn
           } catch (err) {
             throw new EvaluationError(err)

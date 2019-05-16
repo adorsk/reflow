@@ -9,6 +9,7 @@ import Cryo from '../utils/cryo/cryo.js'
 import dedent from '../utils/dedent.js'
 import { transformAndCompileCode } from '../utils/index.js'
 import CodeEditor from './CodeEditor.js'
+import reflowCtx from '../utils/reflowCtx.js'
 
 
 class GraphEditor extends React.Component {
@@ -142,7 +143,7 @@ class GraphEditor extends React.Component {
     const nodeId = _.uniqueId('node-')
     const specFactorySrcCode = this.generateNodeSrcBoilerplateCode({nodeId})
     const specFactory = transformAndCompileCode(specFactorySrcCode)
-    const nodeSpec = await specFactory()
+    const nodeSpec = await specFactory({reflowCtx})
     specFactory.srcCode = specFactorySrcCode
     nodeSpec.specFactoryFn = specFactory
     graph.addNodeFromSpec({nodeSpec})
@@ -150,7 +151,7 @@ class GraphEditor extends React.Component {
 
   generateNodeSrcBoilerplateCode ({nodeId}) {
     const boilerplateCode = dedent(`
-    async () => {
+    async ({reflowCtx}) => {
       const nodeSpec = {
         id: '${nodeId}',
         label: '${nodeId}',
