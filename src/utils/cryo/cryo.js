@@ -128,8 +128,8 @@ function deserializeFnVal (val) {
   const argStart = fn.indexOf('(') + 1
   const argEnd = fn.indexOf(')', argStart)
   const args = fn.slice(argStart, argEnd)
-  const bodyStart = fn.indexOf('{') + 1
-  const bodyEnd = fn.lastIndexOf('}')
+  const bodyStart = fn.indexOf('{', argEnd) + 1
+  const bodyEnd = fn.lastIndexOf('}', bodyStart)
   const body = fn.slice(bodyStart, bodyEnd)
   const ctor = (isAsync) ? AsyncFunction_ : Function // eslint-disable-line
   return new ctor(args, body)

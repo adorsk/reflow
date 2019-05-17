@@ -19,6 +19,7 @@ export class Graph {
     this.setState(state)
     this.wires = {}
     this.nodes = {}
+    this.nodesByKey = {}
     this.tickCount = 0
     this.changed = new signals.Signal()
     this.debouncedTick = _.debounce(this.tick, 0)
@@ -117,6 +118,7 @@ export class Graph {
 
   addNode (node, opts = {noSignals: false}) {
     this.nodes[node.id] = node
+    this.nodesByKey[node.key] = node
     node.changed.add((evt) => this.changed.dispatch({type: 'node', data: evt}))
     if (!opts.noSignals) {
       this.changed.dispatch({type: 'node:add', data: {node}})
@@ -131,7 +133,7 @@ export class Graph {
   }
 
   addWireFromSpec ({wireSpec, opts}) {
-    const wire = Wire.fromSpec({wireSpec, nodes: this.nodes})
+    const wire = Wire.fromSpec({wireSpec, nodesByKey: this.nodesByKey})
     const wireStates = this.state.get(this.SYMBOLS.WIRE_STATES)
     if (! wireStates.has(wire.id)) {
       wireStates.set(wire.id, new Map())
@@ -187,7 +189,10 @@ export class Graph {
   replaceNodeFromSpec ({node, nodeSpec}) {
     const state = node.state
     this.removeNode({nodeId: node.id})
-    this.addNodeFromSpec({nodeSpec, state})
+    this.addNodeFromSpec({
+      nodeSpec: {id: node.id, ...nodeSpec},
+      state
+    })
   }
 
   clearState () {

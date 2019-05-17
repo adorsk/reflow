@@ -122,7 +122,7 @@ export class Wire {
     this.changed.removeAll()
   }
 
-  static fromSpec ({wireSpec = {}, nodes = {}} = {}) {
+  static fromSpec ({wireSpec = {}, nodesByKey = {}} = {}) {
     if (_.isString(wireSpec)) {
       const [srcSpec, destSpec] = wireSpec.split(
         new RegExp(`\\s*${Wire.TERMINALS_SEPARATOR}\\s*`))
@@ -132,10 +132,10 @@ export class Wire {
     for (let srcDest of ['src', 'dest']) {
       let terminalSpec = wireSpec[srcDest]
       if (_.isString(terminalSpec)) {
-        const [nodeId, portId] = terminalSpec.split(Wire.NODE_PORT_SEPARATOR)
-        terminalSpec = {nodeId, portId}
+        const [nodeKey, portId] = terminalSpec.split(Wire.NODE_PORT_SEPARATOR)
+        terminalSpec = {nodeKey, portId}
       }
-      const node = terminalSpec.node || nodes[terminalSpec.nodeId]
+      const node = terminalSpec.node || nodesByKey[terminalSpec.nodeKey]
       const port = (terminalSpec.port || node.getPort({
         ioType: ((srcDest === 'src') ? 'outputs' : 'inputs'),
         portId: terminalSpec.portId,

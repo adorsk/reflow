@@ -3,6 +3,7 @@ import { observable } from 'mobx'
 import signals from 'signals'
 
 import Port from './Port.js'
+import reflowCtx from '../utils/reflowCtx.js'
 
 const SYMBOLS = {
   DISPOSER: Symbol('disposer_key'),
@@ -13,6 +14,7 @@ export class Node {
   constructor (opts = {}) {
     this.SYMBOLS = SYMBOLS
     this.id = opts.id || _.uniqueId('node-')
+    this.key = opts.key || _.uniqueId('node-')
     this.label = opts.label
     this.behaviors = Object.assign({
       drainIncomingHotWiresBeforeTick: true,
@@ -280,7 +282,10 @@ export class Node {
     if (this.ctx.getSerializedSpec) {
       serializedSpec = this.ctx.getSerializedSpec()
     } else {
-      serializedSpec = { specFactoryFn: this.specFactoryFn }
+      serializedSpec = {
+        id: this.id,
+        specFactoryFn: this.specFactoryFn,
+      }
     }
     return serializedSpec
   }
@@ -289,12 +294,13 @@ export class Node {
 Node.deserializeSpec = async (serializedSpec) => {
   let spec
   if (serializedSpec.specFactoryFn) {
-    spec = await serializedSpec.specFactoryFn()
+    spec = await serializedSpec.specFactoryFn({reflowCtx})
     spec.specFactoryFn = serializedSpec.specFactoryFn
     spec.srcCode = serializedSpec.specFactoryFn.srcCode
   } else {
     spec = serializedSpec
   }
+  spec.id = serializedSpec.id
   return spec
 }
 

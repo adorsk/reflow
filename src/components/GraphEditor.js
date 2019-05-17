@@ -7,7 +7,7 @@ import GraphView from './GraphView.js'
 import ObservableMapStore from '../engine/ObservableMapStore.js'
 import Cryo from '../utils/cryo/cryo.js'
 import dedent from '../utils/dedent.js'
-import { transformAndCompileCode } from '../utils/index.js'
+import { transformAndCompileCode, uuid4 } from '../utils/index.js'
 import CodeEditor from './CodeEditor.js'
 import reflowCtx from '../utils/reflowCtx.js'
 
@@ -118,7 +118,7 @@ class GraphEditor extends React.Component {
         {this.renderAddNodeButton()}
         {this.renderAddWireButton()}
         {this.renderSaveButton()}
-        {this.renderDownloadButton()}
+        {this.renderSaveToFileButton()}
         {this.renderLoadFromFileButton()}
         {this.renderLoadFromStoreButton()}
         <Divider />
@@ -140,21 +140,42 @@ class GraphEditor extends React.Component {
   get currentGraph () { return this.graphViewRef.current.props.graph }
 
   async addBlankNodeToGraph ({graph}) {
-    const nodeId = _.uniqueId('node-')
-    const specFactorySrcCode = this.generateNodeSrcBoilerplateCode({nodeId})
+    const nodeKey = _.uniqueId('node-')
+    const specFactorySrcCode = this.generateNodeSrcBoilerplateCode({nodeKey})
     const specFactory = transformAndCompileCode(specFactorySrcCode)
     const nodeSpec = await specFactory({reflowCtx})
     specFactory.srcCode = specFactorySrcCode
     nodeSpec.specFactoryFn = specFactory
+    nodeSpec.id = uuid4()
     graph.addNodeFromSpec({nodeSpec})
   }
 
-  generateNodeSrcBoilerplateCode ({nodeId}) {
+  generateNodeSrcBoilerplateCode ({nodeKey}) {
     const boilerplateCode = dedent(`
-    async ({reflowCtx}) => {
+    async (opts) => {
+      const { reflowCtx } = opts
+      const { NumberInput, getInputValues } = reflowCtx.utils
       const nodeSpec = {
-        id: '${nodeId}',
-        label: '${nodeId}',
+        key: '${nodeKey}',
+        label: '${nodeKey}',
+        portSpecs: {
+          inputs: {
+            in1: {
+              ctx: { getGuiComponent: () => NumberInput }
+            },
+          },
+          outputs: {
+            out1: {},
+          },
+        },
+        tickFn: ({node}) => {
+          if (! node.hasHotInputs()) { return }
+          const inputValues = getInputValues({
+            node,
+            inputKeys: Object.keys(node.getInputPorts())
+          })
+          console.log("inputValues: ", inputValues)
+        },
         ctx: {
           getGuiComponent: ({node, React}) => {
             class GuiComponent extends React.Component {
@@ -265,10 +286,10 @@ class GraphEditor extends React.Component {
     )
   }
 
-  renderDownloadButton () {
+  renderSaveToFileButton () {
     return (
       <Button
-        content="download"
+        content="save to file"
         onClick={() => this.generateDownload()}
       />
     )
