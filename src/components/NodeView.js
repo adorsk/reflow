@@ -5,6 +5,7 @@ import { Button, Card, Message } from 'semantic-ui-react'
 import CodeEditor from './CodeEditor.js'
 import WindowPortal from './WindowPortal.js'
 import PortView from './PortView.js'
+import ErrorBoundary from './ErrorBoundary.js'
 
 
 export class NodeView extends React.Component {
@@ -212,7 +213,9 @@ export class NodeView extends React.Component {
           backgroundColor: 'hsl(0, 0%, 50%)',
         }}
       >
-        <GuiComponent node={node} />
+        <ErrorBoundary key={Math.random()}>
+          <GuiComponent node={node} />
+        </ErrorBoundary>
       </div>
     )
     const usePortalForGui = node.state.get('usePortalForGui')
