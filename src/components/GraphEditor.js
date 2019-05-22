@@ -9,6 +9,7 @@ import Cryo from '../utils/cryo/cryo.js'
 import dedent from '../utils/dedent.js'
 import { transformAndCompileCode, uuid4 } from '../utils/index.js'
 import CodeEditor from './CodeEditor.js'
+import { EvaluationError, CompilationError } from '../utils/Errors.js'
 import reflowCtx from '../utils/reflowCtx.js'
 
 
@@ -116,6 +117,7 @@ class GraphEditor extends React.Component {
       <div>
         <h3>{graph.label}</h3>
         {this.renderAddNodeButton()}
+        {this.renderAddNodeFromFileButton()}
         {this.renderAddWireButton()}
         {this.renderSaveButton()}
         {this.renderSaveToFileButton()}
@@ -141,16 +143,13 @@ class GraphEditor extends React.Component {
 
   async addBlankNodeToGraph ({graph}) {
     const nodeKey = _.uniqueId('node-')
-    const specFactorySrcCode = this.generateNodeSrcBoilerplateCode({nodeKey})
-    const specFactory = transformAndCompileCode(specFactorySrcCode)
-    const nodeSpec = await specFactory({reflowCtx})
-    specFactory.srcCode = specFactorySrcCode
-    nodeSpec.specFactoryFn = specFactory
+    const nodeSpecCode = this.generateNodeSpecBoilerplateCode({nodeKey})
+    const nodeSpec = await this.compileAndEvalNodeSpecCode({code: nodeSpecCode})
     nodeSpec.id = uuid4()
     graph.addNodeFromSpec({nodeSpec})
   }
 
-  generateNodeSrcBoilerplateCode ({nodeKey}) {
+  generateNodeSpecBoilerplateCode ({nodeKey}) {
     const boilerplateCode = dedent(`
     async (opts) => {
       const { reflowCtx } = opts
@@ -192,6 +191,37 @@ class GraphEditor extends React.Component {
     }
     `)
     return boilerplateCode
+  }
+
+  renderAddNodeFromFileButton () {
+    return (
+      <Button
+        content="add node from file"
+        onClick={this.onClickAddNodeFromFileButton.bind(this)}
+      />
+    )
+  }
+
+  async onClickAddNodeFromFileButton () {
+    const fileText = await this.loadFromFile()
+    const nodeSpec = await this.compileAndEvalNodeSpecCode({code: fileText})
+    nodeSpec.id = uuid4()
+    this.currentGraph.addNodeFromSpec({nodeSpec})
+  }
+
+  async loadFromFile () {
+    const fileInput = document.createElement('input')
+    fileInput.setAttribute('type', 'file')
+    const readPromise = new Promise((resolve, reject) => {
+      fileInput.onchange = (evt) => {
+        const file = evt.target.files[0]
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result)
+        reader.readAsText(file)
+      }
+    })
+    fileInput.click()
+    return readPromise
   }
 
   renderAddWireButton () {
@@ -312,21 +342,9 @@ class GraphEditor extends React.Component {
     )
   }
 
-  onClickLoadFromFileButton () {
-    const fileInput = document.createElement('input')
-    fileInput.setAttribute('type', 'file')
-    const readPromise = new Promise((resolve, reject) => {
-      fileInput.onchange = (evt) => {
-        const file = evt.target.files[0]
-        const reader = new FileReader()
-        reader.onload = () => resolve(reader.result)
-        reader.readAsText(file)
-      }
-    })
-    fileInput.click()
-    readPromise.then((stringifiedSerialization) => {
-      return this.loadFromStringifiedSerialization(stringifiedSerialization)
-    })
+  async onClickLoadFromFileButton () {
+    const stringifiedSerialization = await this.loadFromFile()
+    return this.loadFromStringifiedSerialization(stringifiedSerialization)
   }
 
   async loadFromStringifiedSerialization (stringifiedSerialization) {
@@ -366,8 +384,26 @@ class GraphEditor extends React.Component {
         }}
         graph={graph}
         store={graphViewStore}
+        compileAndEvalNodeSpecCode={this.compileAndEvalNodeSpecCode.bind(this)}
       />
     )
+  }
+
+  async compileAndEvalNodeSpecCode ({code}) {
+    let nodeSpec, specFactoryFn
+    try {
+      specFactoryFn = transformAndCompileCode(code)
+      specFactoryFn.srcCode = code
+    } catch (err) {
+      throw new CompilationError(err)
+    }
+    try {
+      nodeSpec = await specFactoryFn({reflowCtx})
+      nodeSpec.specFactoryFn = specFactoryFn
+    } catch (err) {
+      throw new EvaluationError(err)
+    }
+    return nodeSpec
   }
 }
 

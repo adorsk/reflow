@@ -5,13 +5,8 @@ import DragContainer from './DragContainer.js'
 import { DraggableNodeView } from './NodeView.js'
 import WireView from './WireView.js'
 
-import { compileFn } from '../utils/index.js'
-import Transformer from '../utils/Transformer.js'
-import { EvaluationError, CompilationError } from '../utils/Errors.js'
 import ObservableMapStore from '../engine/ObservableMapStore.js'
 import Graph from '../engine/Graph.js'
-
-import reflowCtx from '../utils/reflowCtx.js'
 
 
 class GraphView extends React.Component {
@@ -25,7 +20,6 @@ class GraphView extends React.Component {
     this._wiresFromNode = {}
     this._wiresToNode = {}
     this.wiresContainerRef = React.createRef()
-    this.transformer = new Transformer()
   }
 
   render () {
@@ -93,24 +87,15 @@ class GraphView extends React.Component {
           store.set({key: posKey, value: pos})
         }}
         onChangeSrcCode={async ({node, code}) => {
-          let nodeSpec, specFactoryFn
-          try {
-            const transpiledCode = this.transformer.transform(code).code
-            specFactoryFn = compileFn(transpiledCode)
-            specFactoryFn.srcCode = code
-          } catch (err) {
-            throw new CompilationError(err)
-          }
-          try {
-            nodeSpec = await specFactoryFn({reflowCtx})
-            nodeSpec.specFactoryFn = specFactoryFn
-          } catch (err) {
-            throw new EvaluationError(err)
-          }
+          const nodeSpec = await this.compileAndEvalNodeSpecCode({code})
           graph.replaceNodeFromSpec({node, nodeSpec})
         }}
       />
     )
+  }
+
+  async compileAndEvalNodeSpecCode ({code}) {
+    return this.props.compileAndEvalNodeSpecCode({code})
   }
 
   getStore () {
