@@ -27,10 +27,13 @@ class GraphView extends React.Component {
     if (! graph) { return null }
     const nodes = graph.getNodes()
     const wires = graph.getWires()
+    const gridColor = '#70aeae'
     const style = {
       position: 'absolute',
       width: '100%',
       height: '100%',
+      backgroundSize: '40px 40px',
+      backgroundImage: `linear-gradient(to right, ${gridColor} 1px, transparent 1px), linear-gradient(to bottom, ${gridColor} 1px, transparent 1px)`,
       ...this.props.style,
     }
     return (
