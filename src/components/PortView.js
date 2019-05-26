@@ -22,18 +22,62 @@ export class PortView extends React.Component {
   }
 
   render () {
-    const { port } = this.props
+    const { handleSide, port } = this.props
     const style = Object.assign({
       position: 'relative',
     }, this.props.style)
+    const flexStyle = {
+      display: 'flex',
+      alignContent: 'center',
+    }
+    if (handleSide === 'left') {
+      Object.assign(flexStyle, {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+      })
+    } else if (handleSide === 'top') {
+      Object.assign(flexStyle, {
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+      })
+    }
     return (
       <div
         className='port'
         style={style}
       >
-        {this.renderHandle({port})}
-        {this.renderLabel({port})}
+        <div style={flexStyle}>
+          {this.renderHandle({port})}
+          {this.renderLabel({port})}
+        </div>
       </div>
+    )
+  }
+
+  renderHandle ({port}) {
+    const { handleSide } = this.props
+    const symbol = '◍'
+    const style = {
+      position: 'relative',
+      alignSelf: 'center',
+      zIndex: '-1',
+      color: 'hsl(0, 0%, 30%)',
+    }
+    if (handleSide === 'left') {
+      style.left = '0.42em'
+    } else if (handleSide === 'top') {
+      style.top = '0.56em'
+    }
+    return (
+      <span
+        key="handle"
+        data-portid={port.id}
+        data-nodeid={port.node && port.node.id}
+        className='port-handle'
+        style={style}
+      >
+        <span ref={this.handleRef}>{symbol}</span>
+      </span>
     )
   }
 
@@ -49,15 +93,12 @@ export class PortView extends React.Component {
         <Label.Detail>{this.renderMostRecentPacketSummary({port})}</Label.Detail>
       </Label>
     )
-    const leftRight = (port.ioType === 'inputs') ? 'left' : 'right'
     return (
       <span
         key="label"
         style={{
-          padding: '2px .3em',
           display: 'inline-block',
           verticalAlign: 'middle',
-          width: '100%',
         }}
       >
         <Popup
@@ -65,7 +106,7 @@ export class PortView extends React.Component {
           content={this.renderPopupContent({port})}
           on={null}
           open={this.state.popupIsVisible}
-          position={`bottom ${leftRight}`}
+          position='left center'
           style={{
             maxHeight: '300px',
             overflow: 'auto',
@@ -138,42 +179,6 @@ export class PortView extends React.Component {
     const GuiComponent = this.GuiComponent
     if (!GuiComponent) { return null }
     return (<GuiComponent port={port} />)
-  }
-
-  renderHandle ({port}) {
-    const leftRight = (port.ioType === 'inputs') ? 'left' : 'right'
-    let offset = '-0.35em'
-    let symbol = '■'
-    symbol = '▶'
-    symbol = '▮'
-    symbol = '▪'
-    symbol = '▯'
-    offset = '-0.42em'
-    symbol = '◉'
-    symbol = '●'
-    symbol = '◍'
-      /*
-    offset = '-0.4em'
-    symbol = '▤'
-    symbol = '▦'
-    */
-    return (
-      <span
-        key="handle"
-        data-portid={port.id}
-        data-nodeid={port.node && port.node.id}
-        className='port-handle'
-        style={{
-          position: 'absolute',
-          verticalAlign: 'middle',
-          zIndex: '-1',
-          [leftRight]: offset,
-          color: 'hsl(0, 0%, 30%)',
-        }}
-      >
-        <span ref={this.handleRef}>{symbol}</span>
-      </span>
-    )
   }
 
   componentDidMount () {

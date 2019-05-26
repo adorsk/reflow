@@ -21,6 +21,11 @@ class StatefulNodeView extends React.Component {
           node.srcCode = code
           this.setState({version: Math.random()})
         }}
+        style={{
+          position: 'absolute',
+          left: 200,
+          top: 100
+        }}
       />
     )
   }
@@ -33,10 +38,24 @@ storiesOf('NodeView', module)
       srcCode: 'here is some src yo',
       portSpecs: {
         inputs: {
-          in1: {},
+          in1: {
+            initialValues: [123],
+          },
+          'longish_name': {
+            initialValues: [456],
+          },
+          in3: {
+            initialValues: ['blueberry pie'],
+          },
         },
         outputs: {
-          out1: {},
+          out1: {
+            initialValues: [78],
+          },
+          'another name': {
+            initialValues: ['ko'],
+          },
+          out3: {},
         },
       },
       ctx: {

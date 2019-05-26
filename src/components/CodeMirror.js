@@ -66,6 +66,9 @@ class CodeMirror extends React.Component {
         }
         this.cm.getWrapperElement().style.height = height
       }
+      if (this.props.style.zIndex) {
+        this.cm.getWrapperElement().style.zIndex = this.props.style.zIndex
+      }
       if (this.props.style.maxHeight) {
         let maxHeight = `${this.props.style.maxHeight}`
         if (typeof maxHeight === 'number') {

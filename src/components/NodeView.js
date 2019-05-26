@@ -41,60 +41,172 @@ export class NodeView extends React.Component {
   }
 
   render () {
-    const style = Object.assign({
-      width: '200px',
-      borderRadius: '5px',
-      border: 'thin solid hsl(0, 0%, 90%)',
-    }, this.props.style)
     return (
       <div
         className='node'
         ref={this.props.rootRef}
-        style={style}
+        style={Object.assign({zIndex: 1}, this.props.style)}
       >
-        {this.renderTopBar()}
-        {this.renderPorts()}
-        {this.renderErrors()}
-        {this.renderGui()}
-        {this.props.showDebug ? this.renderDebug() : null}
+        <div style={{position: 'relative'}}>
+          {this.renderIORails()}
+          {this.renderPanes()}
+        </div>
       </div>
     )
   }
 
-  renderTopBar () {
+  renderIORails () {
+    const offset = '1'
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          top: -offset,
+          left: -offset,
+        }}
+      >
+        {this.renderInputsRail()}
+        {this.renderOutputsRail()}
+      </div>
+    )
+  }
+
+  renderInputsRail () {
     const { node } = this.props
-    const label = node.label || node.id
-    const topBar = (
+    const ioType = 'inputs'
+    const portViews = _.map(node.getPortsOfType({ioType}), (port) => {
+      return (
+        <PortView
+          key={port.id}
+          handleSide='left'
+          port={port}
+          ref={(el) => {
+            this.portViews[ioType][port.id] = el
+          }}
+        />
+      )
+    })
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          right: '100%',
+          borderRight: 'thin solid gray',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+        }}
+      >
+        {portViews}
+      </div>
+    )
+  }
+
+  renderOutputsRail () {
+    const { node } = this.props
+    const ioType = 'outputs'
+    const portViews = _.map(node.getPortsOfType({ioType}), (port) => {
+      return (
+        <PortView
+          key={port.id}
+          handleSide='top'
+          port={port}
+          ref={(el) => {
+            this.portViews[ioType][port.id] = el
+          }}
+        />
+      )
+    })
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          bottom: '100%',
+          borderBottom: 'thin solid gray',
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'flex-end',
+        }}
+      >
+        {portViews}
+      </div>
+    )
+  }
+
+  renderPanes () {
+    return (
       <div
         style={{
           display: 'flex',
-          flexDirection: 'row',
-          padding: '.25em',
-          background: 'gray',
-          width: '100%',
-          borderBottom: 'thin solid gray',
-          borderRadius: '5px 5px 0 0',
         }}
       >
-        <label
-          style={{
-            alignSelf: 'stretch',
-            cursor: 'grab',
-            flex: '1 0 auto',
-            textAlign: 'center',
-          }}
-          ref={this.props.labelRef}
-        >
-          {label}
-        </label>
-        <span style={{alignSelf: 'end'}}>
-          {this.renderSrcEditorFrob({node})}
-        </span> 
+        {this.renderCodePane()}
+        {this.renderGuiPane()}
       </div>
     )
-    return topBar
   }
 
+  renderCodePane () {
+    const style = {
+      width: '200px',
+      borderRadius: '5px',
+      border: 'thin solid hsl(0, 0%, 90%)',
+    }
+    return (
+      <div style={style}>
+        {this.renderLabel()}
+        {this.renderCodeEditor()}
+      </div>
+    )
+  }
+
+  renderLabel () {
+    const {node} = this.props
+    return (
+      <div
+        ref={this.props.labelRef}
+        style={{
+          backgroundColor: '#333',
+          color: '#ddd',
+          padding: '.1em .5em',
+        }}
+      >
+        {node.label || node.id}
+      </div>
+    )
+  }
+
+  renderCodeEditor () {
+    const {node} = this.props
+    return (
+      <CodeEditor
+        cmOpts={{keyMap: 'vim'}}
+        style={{
+          width: '100%',
+          height: 'auto',
+        }}
+        defaultValue={node.srcCode || ''}
+        onSave={async ({code}) => {
+          await this.props.onChangeSrcCode({node, code})
+        }}
+      />
+    )
+  }
+
+  renderGuiPane () {
+    const style = {
+      width: '200px',
+      borderRadius: '5px',
+      border: 'thin solid hsl(0, 0%, 90%)',
+    }
+    return (
+      <div style={style}>
+        {this.renderGui()}
+      </div>
+    )
+  }
 
   renderSrcEditorFrob ({node}) {
     const frob = (
@@ -113,7 +225,8 @@ export class NodeView extends React.Component {
     return frob
   }
 
-  renderCodeEditorPortal (node) {
+  renderCodeEditorPortal () {
+    const {node} = this.props
     return (
       <WindowPortal
         closeOnUnmount={false}
@@ -122,17 +235,7 @@ export class NodeView extends React.Component {
         scripts={[...Object.values(CodeEditor.scripts)]}
         beforeUnload={() => node.state.set('srcIsOpen', false)}
       >
-        <CodeEditor
-          cmOpts={{keyMap: 'vim'}}
-          style={{
-            width: '100%',
-            height: 'auto',
-          }}
-          defaultValue={node.srcCode || ''}
-          onSave={async ({code}) => {
-            await this.props.onChangeSrcCode({node, code})
-          }}
-        />
+        {this.renderCodeEditor()}
       </WindowPortal>
     )
   }
@@ -259,10 +362,6 @@ export class NodeView extends React.Component {
       return node.ctx.getGuiComponent({node, React})
     }
     return null
-  }
-
-  renderDebug () {
-    return (<pre>{this.props.node.toString()}</pre>)
   }
 
   getPortView ({ioType, portId}) {
