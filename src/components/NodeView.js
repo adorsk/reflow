@@ -45,7 +45,12 @@ export class NodeView extends React.Component {
       <div
         className='node'
         ref={this.props.rootRef}
-        style={Object.assign({zIndex: 1}, this.props.style)}
+        style={Object.assign(
+          {
+            pointerEvents: 'none',
+          },
+          this.props.style
+        )}
       >
         <div style={{position: 'relative'}}>
           {this.renderIORails()}
@@ -63,6 +68,7 @@ export class NodeView extends React.Component {
           position: 'absolute',
           top: -offset,
           left: -offset,
+          pointerEvents: 'all',
         }}
       >
         {this.renderInputsRail()}
@@ -140,6 +146,8 @@ export class NodeView extends React.Component {
       <div
         style={{
           display: 'flex',
+          alignItems: 'flex-start',
+          pointerEvents: 'none',
         }}
       >
         {this.renderCodePane()}
@@ -153,6 +161,7 @@ export class NodeView extends React.Component {
       width: '200px',
       borderRadius: '5px',
       border: 'thin solid hsl(0, 0%, 90%)',
+      pointerEvents: 'all',
     }
     return (
       <div style={style}>
@@ -200,6 +209,7 @@ export class NodeView extends React.Component {
       width: '200px',
       borderRadius: '5px',
       border: 'thin solid hsl(0, 0%, 90%)',
+      pointerEvents: 'all',
     }
     return (
       <div style={style}>

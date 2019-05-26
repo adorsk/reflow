@@ -7,16 +7,19 @@ storiesOf('DragContainer', module)
   .add('testing', () => {
     class Foo extends React.Component {
       render () {
+        const rgb = [128, 128, 128]
+        rgb[this.props.idx % 3] = 0
         return (
           <div
             ref={this.props.dragContainerRef}
             style={{
-              border: 'thin solid green',
+              backgroundColor: `rgba(${rgb.join(',')}, .8)`,
+              borderRadius: '5%',
               padding: 100,
               ...(this.props.style || {})
             }}
           >
-            <span ref={this.props.dragHandleRef}>Foo</span>
+            <span ref={this.props.dragHandleRef}>{this.props.children}</span>
           </div>
         )
       }
@@ -33,6 +36,7 @@ storiesOf('DragContainer', module)
                 <Foo
                   key={i}
                   pos={{x : i * 50, y: i * 50}}
+                  idx={i}
                 >
                   {i}
                 </Foo>

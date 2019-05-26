@@ -21,12 +21,16 @@ class DraggableItem extends React.Component {
       ref: this.rootRef,
       dragHandleRef: this.dragHandleRef,
       dragContainerRef: this.dragContainerRef,
-      style: {
-        position: 'absolute',
-        ...(child.props.style || {}),
-        left: pos.x + 'px',
-        top: pos.y + 'px',
-      },
+      style: Object.assign(
+        {},
+        this.props.style,
+        {
+          position: 'absolute',
+          ...(child.props.style || {}),
+          left: pos.x + 'px',
+          top: pos.y + 'px',
+        }
+      ),
     })
   }
 
@@ -62,6 +66,8 @@ class DragContainer extends React.Component {
     this.avatarRef = React.createRef()
     this.childItems = {}
     this.childPositions = {}
+    this.topZIndex = 0
+    this.childZIndexes = {}
   }
 
   componentDidMount () {
@@ -164,6 +170,9 @@ class DragContainer extends React.Component {
           delete this.childItems[key]
         }}
         onDragEnd={child && child.props.onDragEnd}
+        style={{
+          zIndex: (this.getChildZIndex({key}) || 0)
+        }}
       >
         {child}
       </DraggableItem>
@@ -199,6 +208,7 @@ class DragContainer extends React.Component {
           return curValue + delta
         })
         this.setChildPos({key, pos: nextPos})
+        this.sendChildToTop({key})
         this._dragMgr.reset()
         this.onDragEnd({draggableItem, key, pos: nextPos})
       },
@@ -222,6 +232,20 @@ class DragContainer extends React.Component {
 
   deleteChildPos (key) {
     delete this.childPositions[key]
+  }
+
+  getChildZIndex ({key}) {
+    return this.childZIndexes[key]
+  }
+
+  sendChildToTop ({key}) {
+    this.topZIndex += 1
+    this.setChildZIndex({key, zIndex: this.topZIndex})
+  }
+
+  setChildZIndex ({key, zIndex}) {
+    this.childZIndexes[key] = zIndex
+    this.setState({modified: Date.now()})
   }
 
   onDragEnd ({draggableItem, key, pos}) {
