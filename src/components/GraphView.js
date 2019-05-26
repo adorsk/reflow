@@ -27,7 +27,7 @@ class GraphView extends React.Component {
     if (! graph) { return null }
     const nodes = graph.getNodes()
     const wires = graph.getWires()
-    const gridColor = '#70aeae'
+    const gridColor = '#eee'
     const style = {
       position: 'absolute',
       width: '100%',

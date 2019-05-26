@@ -146,12 +146,14 @@ export class NodeView extends React.Component {
       <div
         style={{
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'flex-start',
           pointerEvents: 'none',
         }}
       >
-        {this.renderCodePane()}
+        {this.renderLabel()}
         {this.renderGuiPane()}
+        {this.renderCodePane()}
       </div>
     )
   }
@@ -165,7 +167,6 @@ export class NodeView extends React.Component {
     }
     return (
       <div style={style}>
-        {this.renderLabel()}
         {this.renderCodeEditor()}
       </div>
     )
@@ -177,9 +178,11 @@ export class NodeView extends React.Component {
       <div
         ref={this.props.labelRef}
         style={{
+          alignSelf: 'stretch',
           backgroundColor: '#333',
           color: '#ddd',
           padding: '.1em .5em',
+          pointerEvents: 'all',
         }}
       >
         {node.label || node.id}
