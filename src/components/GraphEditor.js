@@ -66,6 +66,7 @@ class GraphEditor extends React.Component {
             style={{
               width: '100%',
               flex: '1 1 auto',
+              position: 'relative',
             }}
           >
             {this.renderBottomSectionContent({graph})}
@@ -379,8 +380,11 @@ class GraphEditor extends React.Component {
       <GraphView
         ref={this.graphViewRef}
         style={{
+          position: 'absolute',
+          left: 0,
           width: '100%',
-          height: '100%',
+          top: 0,
+          bottom: 0,
         }}
         graph={graph}
         store={graphViewStore}
