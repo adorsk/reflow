@@ -8,7 +8,15 @@ import WindowPortal from '../components/WindowPortal.js'
 
 storiesOf('CodeEditor', module)
   .add('default', () => {
-    return (<CodeEditor defaultValue={'some src'}/>)
+    return (
+      <CodeEditor
+        defaultValue={'some src'}
+        style={{
+          height: 'auto',
+          maxHeight: '100px',
+        }}
+      />
+    )
   })
   .add('vim', () => {
     return (

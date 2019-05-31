@@ -5,6 +5,7 @@ import 'codemirror/addon/dialog/dialog.css'
 import 'codemirror/addon/dialog/dialog.js'
 import 'codemirror/mode/jsx/jsx'
 import 'codemirror/keymap/vim.js'
+import { css, cx } from 'emotion'
 
 
 /* eslint-disable */
@@ -29,11 +30,46 @@ class CodeEditor extends React.Component {
   }
 
   render () {
-    const codeMirror = (
+    return (
+      <div
+        className={cx(
+          'CodeEditor',
+          css(`
+            overflow-y: scroll;
+            max-height: 100px;
+            &:focus-within {
+              max-height: none;
+            }
+          `)
+        )}
+      >
+        {this.renderErrors()}
+        {this.renderCodeMirror()}
+      </div>
+    )
+  }
+
+  renderErrors () {
+    const errors = []
+    if (this.state.errorFromSave) {
+      errors.push(this.state.errorFromSave)
+    }
+    return (
+      (errors.length > 0) ? (
+        <div>{'' + errors}</div>
+      ) : null
+    )
+  }
+
+  renderCodeMirror () {
+    return (
       <CodeMirror
         ref={this.cmRef}
         defaultValue={this.props.defaultValue}
-        style={this.props.style}
+        style={Object.assign(
+          {height: 'auto'},
+          this.props.cmStyle
+        )}
         options={Object.assign({
           mode: 'jsx',
           lineNumbers: true,
@@ -48,20 +84,6 @@ class CodeEditor extends React.Component {
           }
         }, this.props.cmOpts)}
       />
-    )
-    const errors = []
-    if (this.state.errorFromSave) {
-      errors.push(this.state.errorFromSave)
-    }
-    return (
-      <div>
-        {
-          errors.length > 0 ? (
-            <div>{'' + errors}</div>
-          ) : null
-        }
-        {codeMirror}
-      </div>
     )
   }
 

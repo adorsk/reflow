@@ -152,8 +152,8 @@ export class NodeView extends React.Component {
         }}
       >
         {this.renderLabel()}
-        {this.renderGuiPane()}
         {this.renderCodePane()}
+        {this.renderGuiPane()}
       </div>
     )
   }
