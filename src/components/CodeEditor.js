@@ -37,11 +37,15 @@ class CodeEditor extends React.Component {
           css(`
             overflow-y: scroll;
             max-height: 100px;
+            max-width: 200px;
             &:focus-within {
               max-height: none;
+              max-width: none;
+              width: 85ch;
             }
           `)
         )}
+        style={this.props.style}
       >
         {this.renderErrors()}
         {this.renderCodeMirror()}

@@ -160,7 +160,6 @@ export class NodeView extends React.Component {
 
   renderCodePane () {
     const style = {
-      width: '200px',
       borderRadius: '5px',
       border: 'thin solid hsl(0, 0%, 90%)',
       pointerEvents: 'all',
@@ -196,8 +195,7 @@ export class NodeView extends React.Component {
       <CodeEditor
         cmOpts={{keyMap: 'vim'}}
         style={{
-          width: '100%',
-          height: 'auto',
+          fontSize: '8px',
         }}
         defaultValue={node.srcCode || ''}
         onSave={async ({code}) => {
