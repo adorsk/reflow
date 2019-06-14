@@ -10,6 +10,7 @@ const SYMBOLS = {
   PORT_STATES: ':PORT_STATES:',
 }
 
+
 export class Node {
   constructor (opts = {}) {
     this.SYMBOLS = SYMBOLS
@@ -289,7 +290,26 @@ export class Node {
     }
     return serializedSpec
   }
+
+  getInputValues ({inputKeys=null} = {}) {
+    inputKeys = inputKeys || Object.keys(this.getInputPorts())
+    const inputValues = {}
+    for (let inputKey of inputKeys) {
+      const port = this.getPort('inputs:' + inputKey)
+      const value = _.get(port, ['mostRecentPacket', 'data'])
+      if (_.isUndefined(value)) {
+        throw new Node.InputsError(`'${inputKey}' is undefined`)
+      }
+      inputValues[inputKey] = value
+    }
+    return inputValues
+  }
 }
+
+
+class InputsError extends Error {}
+Node.InputsError = InputsError
+
 
 Node.deserializeSpec = async (serializedSpec) => {
   let spec
