@@ -89,7 +89,7 @@ export class PortView extends React.Component {
           this.setState({popupIsVisible: !this.state.popupIsVisible})
         }}
       >
-        {port.label || port.id}
+        {port.label}
         <Label.Detail>{this.renderMostRecentPacketSummary({port})}</Label.Detail>
       </Label>
     )

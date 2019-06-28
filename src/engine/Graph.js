@@ -107,33 +107,34 @@ export class Graph {
 
   getWires () { return this.wires }
 
-  addNodeFromSpec ({nodeSpec, state, opts}) {
-    state = state || new Map()
-    const nodeStates = this.state.get(this.SYMBOLS.NODE_STATES)
-    nodeStates.set(nodeSpec.id, state)
-    const node = Node.fromSpec({...nodeSpec, state})
-    this.addNode(node, opts)
-    return node
-  }
-
-  addNode (node, opts = {noSignals: false}) {
+  addNode ({node, state}) {
     this.nodes[node.id] = node
     this.nodesByKey[node.key] = node
+    const nodeStates = this.state.get(SYMBOLS.NODE_STATES)
+    state = state || nodeStates.get(node.id) || new Map()
+    nodeStates.set(node.id, state)
+    this.setNodeState({node, state})
+    this.addNodeListener({node})
+    node.init()
+    this.changed.dispatch({type: 'node:add', data: {node}})
+  }
+
+  setNodeState ({node, state}) {
+    this.state.get(this.SYMBOLS.NODE_STATES).set(node.id, state)
+  }
+
+  addNodeListener ({node}) {
     node.changed.add((evt) => this.changed.dispatch({type: 'node', data: evt}))
-    if (!opts.noSignals) {
-      this.changed.dispatch({type: 'node:add', data: {node}})
-    }
-    if (node.ctx.didMountFn) { node.ctx.didMountFn({node}) }
   }
 
   removeNode ({nodeId}) {
-    this.nodes[nodeId].unmount()
+    if (this.nodes[nodeId]) { this.nodes[nodeId].unmount() }
     this.state.get(this.SYMBOLS.NODE_STATES).delete(nodeId)
     delete this.nodes[nodeId]
   }
 
-  addWireFromSpec ({wireSpec, opts}) {
-    const wire = Wire.fromSpec({wireSpec, nodesByKey: this.nodesByKey})
+  async addWireFromSpec ({wireSpec, opts}) {
+    const wire = await Wire.fromSpec({wireSpec, nodesByKey: this.nodesByKey})
     const wireStates = this.state.get(this.SYMBOLS.WIRE_STATES)
     if (! wireStates.has(wire.id)) {
       wireStates.set(wire.id, new Map())
@@ -162,7 +163,6 @@ export class Graph {
     _.each(this.wires, (wire, key) => {
       this.removeWire({wire, key})
     })
-
     _.each(this.nodes, (node, id) => {
       this.removeNode({nodeId: id})
     })
@@ -186,13 +186,10 @@ export class Graph {
     )
   }
 
-  replaceNodeFromSpec ({node, nodeSpec}) {
+  replaceNode ({node}) {
     const state = node.state
     this.removeNode({nodeId: node.id})
-    this.addNodeFromSpec({
-      nodeSpec: {id: node.id, ...nodeSpec},
-      state
-    })
+    this.addNode({node, state})
   }
 
   clearState () {
@@ -231,6 +228,30 @@ export class Graph {
         this.state.set(key, value)
       }
     }
+  }
+
+  getSerialization () {
+    const serialization = {
+      spec: this.getSpec(),
+      serializedState: this.getSerializedState(),
+    }
+    return serialization
+  }
+
+  getSpec () {
+    const getSpecsForItems = (items) => {
+      const keyedItems = _.keyBy(items, 'id')
+      return _.mapValues(keyedItems, (item) => item.getSpec())
+    }
+    const spec = {
+      ctorOpts: {
+        id: this.id,
+        label: this.label,
+      },
+      nodeSpecs: getSpecsForItems(this.getNodes()),
+      wireSpecs: getSpecsForItems(this.getWires()),
+    }
+    return spec
   }
 
   getSerializedState () {
@@ -302,33 +323,10 @@ export class Graph {
     return state
   }
 
-  getSerializedSpec () {
-    const getSpecSerializationsForItems = (items) => {
-      const keyedItems = _.keyBy(items, 'id')
-      return _.mapValues(keyedItems, (item) => item.getSerializedSpec())
-    }
-    const serializedSpec = {
-      ctorOpts: {
-        id: this.id,
-        label: this.label,
-      },
-      serializedNodeSpecs: getSpecSerializationsForItems(this.getNodes()),
-      serializedWireSpecs: getSpecSerializationsForItems(this.getWires()),
-    }
-    return serializedSpec
-  }
-
-  getSerialization () {
-    const serialization = {
-      serializedSpec: this.getSerializedSpec(),
-      serializedState: this.getSerializedState(),
-    }
-    return serialization
-  }
 }
 
 Graph.fromSerialization = async ({serialization}) => {
-  const graph = await Graph.fromSerializedSpec(serialization.serializedSpec)
+  const graph = await Graph.fromSpec({spec: serialization.spec})
   const state = graph.deserializeState(serialization.serializedState)
   graph.loadState(state)
   return graph
@@ -352,20 +350,19 @@ Graph.deserializeSpec = async (serializedSpec) => {
   return spec 
 }
 
-Graph.fromSpec = ({spec = {}} = {}) => {
+Graph.fromSpec = async ({spec}) => {
   const graph = new Graph(spec.ctorOpts || {})
+  const nodePromises = []
   for (let nodeSpec of _.values(spec.nodeSpecs)) {
-    graph.addNodeFromSpec({nodeSpec})
+    nodePromises.push(graph.addNodeFromSpec({nodeSpec}))
   }
+  await Promise.all(nodePromises)
+  const wirePromises = []
   for (let wireSpec of _.values(spec.wireSpecs)) {
-    graph.addWireFromSpec({wireSpec})
+    wirePromises.push(graph.addWireFromSpec({wireSpec}))
   }
+  await Promise.all(wirePromises)
   return graph
-}
-
-Graph.fromSerializedSpec = async (serializedSpec) => {
-  const spec = await Graph.deserializeSpec(serializedSpec)
-  return Graph.fromSpec({spec})
 }
 
 export default Graph

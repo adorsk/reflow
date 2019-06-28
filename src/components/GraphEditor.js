@@ -144,51 +144,40 @@ class GraphEditor extends React.Component {
 
   async addBlankNodeToGraph ({graph}) {
     const nodeKey = _.uniqueId('node-')
-    const nodeSpecCode = this.generateNodeSpecBoilerplateCode({nodeKey})
-    const nodeSpec = await this.compileAndEvalNodeSpecCode({code: nodeSpecCode})
-    nodeSpec.id = uuid4()
-    graph.addNodeFromSpec({nodeSpec})
+    const nodeSpecCode = this.generateNodeFactoryFnBoilerplateCode({nodeKey})
+    const node = await this.compileAndEvalNodeFactoryFnCode({code: nodeSpecCode})
+    graph.addNode({node})
   }
 
-  generateNodeSpecBoilerplateCode ({nodeKey}) {
+  generateNodeFactoryFnBoilerplateCode ({nodeKey}) {
     const boilerplateCode = dedent(`
     async (opts) => {
       const { reflowCtx } = opts
       const { NumberInput, getInputValues } = reflowCtx.utils
-      const nodeSpec = {
-        key: '${nodeKey}',
-        label: '${nodeKey}',
-        portSpecs: {
-          inputs: {
-            in1: {
-              ctx: { getGuiComponent: () => NumberInput }
-            },
-          },
-          outputs: {
-            out1: {},
-          },
-        },
-        tickFn: ({node}) => {
-          if (! node.hasHotInputs()) { return }
-          const inputValues = getInputValues({
-            node,
-            inputKeys: Object.keys(node.getInputPorts())
-          })
-          console.log("inputValues: ", inputValues)
-        },
-        ctx: {
-          getGuiComponent: ({node, React}) => {
-            class GuiComponent extends React.Component {
-              render () {
-                const { node } = this.props
-                return (<div>{node.label}</div>)
-              }
-            }
-            return GuiComponent
-          },
-        }
+      const Node = reflowCtx.Node
+      const node = new Node()
+      node.key = '${nodeKey}'
+      node.label = '${nodeKey}'
+      node.addInput('in1', {ctx: {getGuiComponent: () => NumberInput}})
+      node.addOutput('out1')
+      node.tickFn = ({node}) => {
+        if (! node.hasHotInputs()) { return }
+        const inputValues = getInputValues({
+          node,
+          inputKeys: Object.keys(node.getInputPorts())
+        })
+        console.log("inputValues: ", inputValues)
       }
-      return nodeSpec
+      node.getGuiComponent = ({node, React}) => {
+        class GuiComponent extends React.Component {
+          render () {
+            const { node } = this.props
+            return (<div>{node.label}</div>)
+          }
+        }
+        return GuiComponent
+      }
+      return node
     }
     `)
     return boilerplateCode
@@ -205,9 +194,8 @@ class GraphEditor extends React.Component {
 
   async onClickAddNodeFromFileButton () {
     const fileText = await this.loadFromFile()
-    const nodeSpec = await this.compileAndEvalNodeSpecCode({code: fileText})
-    nodeSpec.id = uuid4()
-    this.currentGraph.addNodeFromSpec({nodeSpec})
+    const node = await this.compileAndEvalNodeFactoryFnCode({code: fileText})
+    this.currentGraph.addNode({node})
   }
 
   async loadFromFile () {
@@ -388,26 +376,28 @@ class GraphEditor extends React.Component {
         }}
         graph={graph}
         store={graphViewStore}
-        compileAndEvalNodeSpecCode={this.compileAndEvalNodeSpecCode.bind(this)}
+        compileAndEvalNodeFactoryFnCode={this.compileAndEvalNodeFactoryFnCode.bind(this)}
       />
     )
   }
 
-  async compileAndEvalNodeSpecCode ({code}) {
-    let nodeSpec, specFactoryFn
+  async compileAndEvalNodeFactoryFnCode ({code}) {
+    let node, nodeFactoryFn
     try {
-      specFactoryFn = transformAndCompileCode(code)
-      specFactoryFn.srcCode = code
+      nodeFactoryFn = transformAndCompileCode(code)
+      nodeFactoryFn.srcCode = code
     } catch (err) {
       throw new CompilationError(err)
     }
     try {
-      nodeSpec = await specFactoryFn({reflowCtx})
-      nodeSpec.specFactoryFn = specFactoryFn
+      node = await nodeFactoryFn({reflowCtx})
+      node.id = node.id || uuid4()
+      node.factoryFn = nodeFactoryFn
+      node.srcCode = node.factoryFn.srcCode
     } catch (err) {
       throw new EvaluationError(err)
     }
-    return nodeSpec
+    return node
   }
 }
 

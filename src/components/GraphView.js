@@ -90,15 +90,16 @@ class GraphView extends React.Component {
           store.set({key: posKey, value: pos})
         }}
         onChangeSrcCode={async ({node, code}) => {
-          const nodeSpec = await this.compileAndEvalNodeSpecCode({code})
-          graph.replaceNodeFromSpec({node, nodeSpec})
+          const nextNode = await this.compileAndEvalNodeFactoryFnCode({code})
+          nextNode.id = node.id
+          graph.replaceNode({node: nextNode})
         }}
       />
     )
   }
 
-  async compileAndEvalNodeSpecCode ({code}) {
-    return this.props.compileAndEvalNodeSpecCode({code})
+  async compileAndEvalNodeFactoryFnCode ({code}) {
+    return this.props.compileAndEvalNodeFactoryFnCode({code})
   }
 
   getStore () {

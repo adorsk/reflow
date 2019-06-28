@@ -158,14 +158,14 @@ export class Wire {
     }).join(` ${Wire.TERMINALS_SEPARATOR} `)
   }
 
-  getSerializedSpec () {
-    let serializedSpec
-    if (this.ctx.getSerializedSpec) {
-      serializedSpec = this.ctx.getSerializedSpec()
+  getSpec () {
+    let spec
+    if (this.ctx.getSpec) {
+      spec = this.ctx.getSpec()
     } else {
-      serializedSpec = { specFactoryFn: this.specFactoryFn }
+      spec = { factoryFn: this.factoryFn }
     }
-    return serializedSpec
+    return spec
   }
 }
 

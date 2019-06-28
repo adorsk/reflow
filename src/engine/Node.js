@@ -3,7 +3,6 @@ import { observable } from 'mobx'
 import signals from 'signals'
 
 import Port from './Port.js'
-import reflowCtx from '../utils/reflowCtx.js'
 
 const SYMBOLS = {
   DISPOSER: Symbol('disposer_key'),
@@ -21,19 +20,11 @@ export class Node {
       drainIncomingHotWiresBeforeTick: true,
       quenchHotInputsAfterTick: true,
     }, opts.behaviors)
-    this.ctx = opts.ctx || {}
-    this.specFactoryFn = opts.specFactoryFn
-    this.srcCode = opts.srcCode || _.get(this.specFactoryFn, 'srcCode')
+    this.factoryFn = opts.factoryFn
     this.changed = new signals.Signal()
     this.tickFn = opts.tickFn
     this.setState(opts.state || new Map())
     this.ports = {}
-    for (let ioType of ['inputs', 'outputs']) {
-      const portsForIoType = (opts.ports && opts.ports[ioType]) || {}
-      _.map(portsForIoType, (port) => {
-        this.addPort({port, ioType})
-      })
-    }
     this.tickCount = 0
     this.versions = {
       inputs: 0,
@@ -45,43 +36,54 @@ export class Node {
     this.errors = []
   }
 
+  init () {
+    for (let port of this.getPorts()) {
+      this.addPortListener({port})
+      port.init()
+    }
+  }
+
+  addPortListener ({port}) {
+    port.changed.add((evt) => {
+      this.changed.dispatch({type: port.ioType, data: {port}})
+    })
+  }
+
+  addInput (key, portOpts = {}) {
+    const port = new Port({key, ...portOpts, ioType: Port.IO_TYPES.INPUTS})
+    this.addPort({port})
+  }
+
+  addPort ({port}) {
+    port.setNode(this)
+    port.key = [port.ioType, port.id].join(':')
+    this.ports[port.key] = port
+  }
+
+  addOutput (key, portOpts = {}) {
+    const port = new Port({key, ...portOpts, ioType: Port.IO_TYPES.OUTPUTS})
+    this.addPort({port})
+  }
+
   setState (state) {
     // unbind prev state
     if (this[this.SYMBOLS.DISPOSER]) { this[this.SYMBOLS.DISPOSER]() }
-    state = (state.observe) ? state : observable.map(state)
-    if (! state.has(this.SYMBOLS.PORT_STATES)) {
-      state.set(this.SYMBOLS.PORT_STATES, new Map())
+    this.state = (state.observe) ? state : observable.map(state)
+    if (! this.state.has(this.SYMBOLS.PORT_STATES)) {
+      this.state.set(this.SYMBOLS.PORT_STATES, new Map())
     }
-    this[this.SYMBOLS.DISPOSER] = state.observe(() => {
+    this.propagatePortStates()
+    this[this.SYMBOLS.DISPOSER] = this.state.observe(() => {
       this.changed.dispatch({type: 'state'})
     })
-    this.state = state
   }
 
-  clearState () {
-    for (let key of this.state.keys()) {
-      if (key === this.SYMBOLS.PORT_STATES) { continue }
-      this.state.delete(key)
-    }
-    for (let port of _.values(this.getPorts())) {
-      port.clearState()
-    }
-  }
-
-  loadState (nextState) {
-    this.clearState()
-    for (let key of nextState.keys()) {
-      const value = nextState.get(key)
-      if (key === this.SYMBOLS.PORT_STATES) {
-        const portStates = value
-        for (let portKey of portStates.keys()) {
-          const port = this.ports[portKey]
-          if (! port) { continue }
-          port.loadState(portStates.get(portKey))
-        }
-      } else {
-        this.state.set(key, value)
-      }
+  propagatePortStates () {
+    const portStates = this.state.get(this.SYMBOLS.PORT_STATES)
+    for (let portKey of portStates.keys()) {
+      const port = this.ports[portKey]
+      if (! port) { continue }
+      port.setState(portStates.get(portKey))
     }
   }
 
@@ -129,15 +131,6 @@ export class Node {
       }
     }
     return state
-  }
-
-  addPort ({port, ioType}) {
-    port.setNode(this)
-    port.key = [ioType, port.id].join(':')
-    this.ports[port.key] = port
-    port.changed.add((evt) => {
-      this.changed.dispatch({type: ioType, data: {port}})
-    })
   }
 
   setErrors (errors, opts = {noSignals: false}) {
@@ -204,12 +197,14 @@ export class Node {
     return this.getPort({ioType: 'inputs', portId})
   }
 
-  getInputPorts () { return this.getPortsOfType({ioType: 'inputs'}) }
-
+  getInputPorts () {
+    return this.getPortsOfType({ioType: Port.IO_TYPES.INPUTS})
+  }
   get inputPorts () { return this.getInputPorts() }
 
-  getOutputPorts () { return this.getPortsOfType({ioType: 'outputs'}) }
-
+  getOutputPorts () {
+    return this.getPortsOfType({ioType: Port.IO_TYPES.OUTPUTS})
+  }
   get outputPorts () { return this.getOutputPorts() }
 
   hasHotInputs () {
@@ -278,17 +273,12 @@ export class Node {
     )
   }
 
-  getSerializedSpec () {
-    let serializedSpec
-    if (this.ctx.getSerializedSpec) {
-      serializedSpec = this.ctx.getSerializedSpec()
-    } else {
-      serializedSpec = {
-        id: this.id,
-        specFactoryFn: this.specFactoryFn,
-      }
+  getSpec () {
+    const spec = {
+      id: this.id,
+      factoryFn: this.factoryFn,
     }
-    return serializedSpec
+    return spec
   }
 
   getInputValues ({inputKeys=null} = {}) {
@@ -310,45 +300,10 @@ export class Node {
 class InputsError extends Error {}
 Node.InputsError = InputsError
 
-
-Node.deserializeSpec = async (serializedSpec) => {
-  let spec
-  if (serializedSpec.specFactoryFn) {
-    spec = await serializedSpec.specFactoryFn({reflowCtx})
-    spec.specFactoryFn = serializedSpec.specFactoryFn
-    spec.srcCode = serializedSpec.specFactoryFn.srcCode
-  } else {
-    spec = serializedSpec
-  }
-  spec.id = serializedSpec.id
-  return spec
-}
-
-Node.fromSpec = (spec) => {
-  const { portSpecs, ...nodeOpts } = spec
-  const node = new Node(nodeOpts)
-  const portStates = node.state.get(SYMBOLS.PORT_STATES)
-  _.each(portSpecs, (portSpecsForIoType, ioType) => {
-    _.each(portSpecsForIoType, (portSpec, portId) => {
-      const portKey = [ioType, portId].join(':')
-      let portState = portStates.get(portKey)
-      if (_.isUndefined(portState)) {
-        portState = new Map()
-        portStates.set(portKey, portState)
-      }
-      node.addPort({
-        port: new Port({
-          id: portId,
-          key: portKey,
-          state: portState,
-          ioType,
-          node,
-          ...portSpec,
-        }),
-        ioType
-      })
-    })
-  })
+Node.fromSpec = async (spec) => {
+  const { id, factoryFn } = spec
+  const node = await factoryFn()
+  node.id = id
   return node
 }
 

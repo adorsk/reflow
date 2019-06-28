@@ -10,20 +10,27 @@ const SYMBOLS = {
   PACKETS: ':PACKETS:',
 }
 
+
 class Port {
+
+  static IO_TYPES = {
+    INPUTS: 'inputs',
+    OUTPUTS: 'outputs',
+  }
+
   constructor (opts = {}) {
     this.SYMBOLS = SYMBOLS
-    this.id = opts.id // @TODO: should become label?
     this.key = opts.key
+    this.id = opts.id || _.uniqueId('port-')
+    this.label = opts.key || this.id
     this.behaviors = opts.behaviors || {}
-    this.ctx = opts.ctx
     this.changed = new signals.Signal()
     this.initialValues = opts.initialValues
     this.setNode(opts.node)
     this.setState(opts.state || new Map())
     this.ioType = opts.ioType
+    this.ctx = opts.ctx || {}
     this.wires = []
-    this.init()
   }
 
   init () {
