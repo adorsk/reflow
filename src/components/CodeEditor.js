@@ -36,13 +36,8 @@ class CodeEditor extends React.Component {
           'CodeEditor',
           css(`
             overflow-y: scroll;
-            max-height: 100px;
-            max-width: 200px;
-            &:focus-within {
-              max-height: none;
-              max-width: none;
-              width: 85ch;
-            }
+            max-height: 40em;
+            width: 85ch;
           `)
         )}
         style={this.props.style}
