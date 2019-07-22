@@ -32,10 +32,14 @@ export function compileFn (fnString) {
   }
 }
 
+export function transformCode (code) {
+  return transformer.transform(code).code
+}
+
 export function transformAndCompileCode (code) {
   try {
-    const transpiled = transformer.transform(code).code
-    const compiled = eval(transpiled) // eslint-disable-line
+    const transformed = transformCode(code)
+    const compiled = eval(transformed) // eslint-disable-line
     return compiled
   } catch (err) {
     throw new Error([err, "code:\n" + code].join("\n"))

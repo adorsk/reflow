@@ -7,10 +7,17 @@ import GraphView from './GraphView.js'
 import ObservableMapStore from '../engine/ObservableMapStore.js'
 import Cryo from '../utils/cryo/cryo.js'
 import dedent from '../utils/dedent.js'
-import { transformAndCompileCode, uuid4 } from '../utils/index.js'
+import {
+  transformCode,
+  transformAndCompileCode,
+  uuid4 } from '../utils/index.js'
 import CodeEditor from './CodeEditor.js'
 import { EvaluationError, CompilationError } from '../utils/Errors.js'
 import reflowCtx from '../utils/reflowCtx.js'
+import Node from '../engine/Node.js'
+
+// eslint-disable-next-line
+const AsyncFunction = eval(`Object.getPrototypeOf(async function(){}).constructor`)
 
 
 class GraphEditor extends React.Component {
@@ -143,41 +150,35 @@ class GraphEditor extends React.Component {
   get currentGraph () { return this.graphViewRef.current.props.graph }
 
   async addBlankNodeToGraph ({graph}) {
+    const node = new Node({id: uuid4()})
     const nodeKey = _.uniqueId('node-')
-    const nodeSpecCode = this.generateNodeFactoryFnBoilerplateCode({nodeKey})
-    const node = await this.compileAndEvalNodeFactoryFnCode({code: nodeSpecCode})
+    const nodeSpecCode = this.generateNodeBuilderFnBoilerplateCode({nodeKey})
+    await this.compileAndEvalNodeBuilderFnCode({node, code: nodeSpecCode})
     graph.addNode({node})
   }
 
-  generateNodeFactoryFnBoilerplateCode ({nodeKey}) {
+  generateNodeBuilderFnBoilerplateCode ({nodeKey}) {
     const boilerplateCode = dedent(`
-    async (opts) => {
-      const { reflowCtx } = opts
-      const { NumberInput, getInputValues } = reflowCtx.utils
-      const Node = reflowCtx.Node
-      const node = new Node()
-      node.key = '${nodeKey}'
-      node.label = '${nodeKey}'
-      node.addInput('in1', {ctx: {getGuiComponent: () => NumberInput}})
-      node.addOutput('out1')
-      node.tickFn = ({node}) => {
-        if (! node.hasHotInputs()) { return }
-        const inputValues = getInputValues({
-          node,
-          inputKeys: Object.keys(node.getInputPorts())
-        })
-        console.log("inputValues: ", inputValues)
-      }
-      node.getGuiComponent = ({node, React}) => {
-        class GuiComponent extends React.Component {
-          render () {
-            const { node } = this.props
-            return (<div>{node.label}</div>)
-          }
+    node.key = '${nodeKey}'
+    node.label = '${nodeKey}'
+    node.addInput('in1')
+    node.addOutput('out1')
+    node.tickFn = ({node}) => {
+      if (! node.hasHotInputs()) { return }
+      const inputValues = getInputValues({
+        node,
+        inputKeys: Object.keys(node.getInputPorts())
+      })
+      console.log("inputValues: ", inputValues)
+    }
+    node.getGuiComponent = ({node, React}) => {
+      class GuiComponent extends React.Component {
+        render () {
+          const { node } = this.props
+          return (<div>{node.label}</div>)
         }
-        return GuiComponent
       }
-      return node
+      return GuiComponent
     }
     `)
     return boilerplateCode
@@ -194,7 +195,7 @@ class GraphEditor extends React.Component {
 
   async onClickAddNodeFromFileButton () {
     const fileText = await this.loadFromFile()
-    const node = await this.compileAndEvalNodeFactoryFnCode({code: fileText})
+    const node = await this.compileAndEvalNodeBuilderFnCode({code: fileText})
     this.currentGraph.addNode({node})
   }
 
@@ -376,24 +377,24 @@ class GraphEditor extends React.Component {
         }}
         graph={graph}
         store={graphViewStore}
-        compileAndEvalNodeFactoryFnCode={this.compileAndEvalNodeFactoryFnCode.bind(this)}
+        compileAndEvalNodeBuilderFnCode={this.compileAndEvalNodeBuilderFnCode.bind(this)}
       />
     )
   }
 
-  async compileAndEvalNodeFactoryFnCode ({code}) {
-    let node, nodeFactoryFn
+  async compileAndEvalNodeBuilderFnCode ({node, code}) {
+    let nodeBuilderFn
     try {
-      nodeFactoryFn = transformAndCompileCode(code)
-      nodeFactoryFn.srcCode = code
+      const transformedCode = transformCode(code)
+      nodeBuilderFn = AsyncFunction('node', transformedCode)
+      nodeBuilderFn.srcCode = code
     } catch (err) {
       throw new CompilationError(err)
     }
     try {
-      node = await nodeFactoryFn({reflowCtx})
-      node.id = node.id || uuid4()
-      node.factoryFn = nodeFactoryFn
-      node.srcCode = node.factoryFn.srcCode
+      await nodeBuilderFn(node)
+      node.builderFn = nodeBuilderFn
+      node.srcCode = node.builderFn.srcCode
     } catch (err) {
       throw new EvaluationError(err)
     }

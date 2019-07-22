@@ -7,6 +7,7 @@ import WireView from './WireView.js'
 
 import ObservableMapStore from '../engine/ObservableMapStore.js'
 import Graph from '../engine/Graph.js'
+import Node from '../engine/Node.js'
 
 
 class GraphView extends React.Component {
@@ -90,16 +91,16 @@ class GraphView extends React.Component {
           store.set({key: posKey, value: pos})
         }}
         onChangeSrcCode={async ({node, code}) => {
-          const nextNode = await this.compileAndEvalNodeFactoryFnCode({code})
-          nextNode.id = node.id
+          const nextNode = new Node({id: node.id})
+          await this.compileAndEvalNodeBuilderFnCode({node: nextNode, code})
           graph.replaceNode({node: nextNode})
         }}
       />
     )
   }
 
-  async compileAndEvalNodeFactoryFnCode ({code}) {
-    return this.props.compileAndEvalNodeFactoryFnCode({code})
+  async compileAndEvalNodeBuilderFnCode ({node, code}) {
+    return this.props.compileAndEvalNodeBuilderFnCode({node, code})
   }
 
   getStore () {
