@@ -78,13 +78,42 @@ export class NodeView extends React.Component {
   }
 
   renderInputsRail () {
+    return this.renderIoRail({ioType: 'inputs'})
+  }
+
+  renderIoRail ({ioType}) {
     const { node } = this.props
-    const ioType = 'inputs'
+    let handleSide, style
+    let baseStyle = {
+      position: 'absolute',
+      display: 'flex',
+      alignItems: 'flex-end',
+    }
+    const borderColor = 'hsl(0, 0%, 75%)'
+    if (ioType === 'inputs') {
+      handleSide = 'left'
+      style = {
+        ...baseStyle,
+        top: 0,
+        right: '100%',
+        borderRight: `thin solid ${borderColor}`,
+        flexDirection: 'column',
+      }
+    } else if (ioType === 'outputs') {
+      handleSide = 'top'
+      style = {
+        ...baseStyle,
+        left: 0,
+        bottom: '100%',
+        borderBottom: `thin solid ${borderColor}`,
+        flexDirection: 'row',
+      }
+    }
     const portViews = _.map(node.getPortsOfType({ioType}), (port) => {
       return (
         <PortView
           key={port.id}
-          handleSide='left'
+          handleSide={handleSide}
           port={port}
           ref={(el) => {
             this.portViews[ioType][port.id] = el
@@ -93,52 +122,14 @@ export class NodeView extends React.Component {
       )
     })
     return (
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          right: '100%',
-          borderRight: 'thin solid gray',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-end',
-        }}
-      >
+      <div style={style}>
         {portViews}
       </div>
     )
   }
 
   renderOutputsRail () {
-    const { node } = this.props
-    const ioType = 'outputs'
-    const portViews = _.map(node.getPortsOfType({ioType}), (port) => {
-      return (
-        <PortView
-          key={port.id}
-          handleSide='top'
-          port={port}
-          ref={(el) => {
-            this.portViews[ioType][port.id] = el
-          }}
-        />
-      )
-    })
-    return (
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          bottom: '100%',
-          borderBottom: 'thin solid gray',
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'flex-end',
-        }}
-      >
-        {portViews}
-      </div>
-    )
+    return this.renderIoRail({ioType: 'outputs'})
   }
 
   renderPanes () {
@@ -334,22 +325,25 @@ export class NodeView extends React.Component {
     )
     const usePortalForGui = node.state.get('usePortalForGui')
     const showView = node.state.has('showView') ? node.state.get('showView') : true
+    const buttonStyle = {padding: 0}
     return (
       <div className="view">
         <Card>
-          <Card.Content>
-            <Card.Meta>
+            <Card.Header textAlign='right'>
               <Button.Group size="mini" compact>
                 <Button
                   icon="clone"
                   onClick={() => node.state.set('usePortalForGui', !usePortalForGui)}
+                  style={buttonStyle}
                 />
                 <Button
                   icon={showView ? 'hide' : 'eye'}
                   onClick={() => node.state.set('showView', !showView)}
+                  style={buttonStyle}
                 />
               </Button.Group>
-            </Card.Meta>
+            </Card.Header>
+          <Card.Content style={{padding: '.1em'}}>
             <Card.Description>
               {
                 (usePortalForGui) ? (

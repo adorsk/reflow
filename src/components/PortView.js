@@ -56,7 +56,7 @@ export class PortView extends React.Component {
 
   renderHandle ({port}) {
     const { handleSide } = this.props
-    const symbol = '◍'
+    const symbol = ' '
     const style = {
       position: 'relative',
       alignSelf: 'center',
@@ -85,12 +85,17 @@ export class PortView extends React.Component {
     const trigger = (
       <Label
         as="a"
+        basic
+        size='tiny'
         onClick={() => {
           this.setState({popupIsVisible: !this.state.popupIsVisible})
         }}
+        style={{padding: '0em .2em'}}
       >
         {port.label}
-        <Label.Detail>{this.renderMostRecentPacketSummary({port})}</Label.Detail>
+        <Label.Detail style={{display: 'inline'}}>
+          {this.renderMostRecentPacketSummary({port})}
+        </Label.Detail>
       </Label>
     )
     return (

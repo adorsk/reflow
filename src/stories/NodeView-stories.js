@@ -33,36 +33,17 @@ class StatefulNodeView extends React.Component {
 
 storiesOf('NodeView', module)
   .add('default', () => {
-    const node = Node.fromSpec({
-      id: 'node1',
-      srcCode: 'here is some src yo',
-      portSpecs: {
-        inputs: {
-          in1: {
-            initialValues: [123],
-          },
-          'longish_name': {
-            initialValues: [456],
-          },
-          in3: {
-            initialValues: ['blueberry pie'],
-          },
-        },
-        outputs: {
-          out1: {
-            initialValues: [78],
-          },
-          'another name': {
-            initialValues: ['ko'],
-          },
-          out3: {},
-        },
-      },
-      ctx: {
-        getGuiComponent: () => {
-          return (() => (<div>a gui!</div>))
-        }
-      }
-    })
+    const node = new Node()
+    node.id = 'node1'
+    node.srcCode = 'here is some src yo'
+    node.addInput('in1')
+    node.addInput('longishName')
+    node.addInput('in3')
+    node.addOutput('out1')
+    node.addOutput('another name')
+    node.addOutput('out3')
+    node.getGuiComponent = () => {
+      return (() => (<div>a gui!</div>))
+    }
     return (<StatefulNodeView node={node} />)
   })
