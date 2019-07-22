@@ -35,6 +35,11 @@ export class PortView extends React.Component {
         flexDirection: 'row',
         justifyContent: 'flex-end',
       })
+    } else if (handleSide === 'right') {
+      Object.assign(flexStyle, {
+        flexDirection: 'row-reverse',
+        justifyContent: 'flex-end',
+      })
     } else if (handleSide === 'top') {
       Object.assign(flexStyle, {
         flexDirection: 'column',
@@ -56,7 +61,7 @@ export class PortView extends React.Component {
 
   renderHandle ({port}) {
     const { handleSide } = this.props
-    const symbol = ' '
+    const symbol = '●'
     const style = {
       position: 'relative',
       alignSelf: 'center',
@@ -65,6 +70,8 @@ export class PortView extends React.Component {
     }
     if (handleSide === 'left') {
       style.left = '0.42em'
+    } else if (handleSide === 'right') {
+      style.right = '0.42em'
     } else if (handleSide === 'top') {
       style.top = '0.56em'
     }

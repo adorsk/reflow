@@ -61,13 +61,13 @@ export class NodeView extends React.Component {
   }
 
   renderIORails () {
-    const offset = '1'
     return (
       <div
         style={{
           position: 'absolute',
-          top: -offset,
-          left: -offset,
+          top: 0,
+          left: 0,
+          right: 0,
           pointerEvents: 'all',
         }}
       >
@@ -87,26 +87,25 @@ export class NodeView extends React.Component {
     let baseStyle = {
       position: 'absolute',
       display: 'flex',
-      alignItems: 'flex-end',
+      flexDirection: 'column',
+      top: 0,
     }
     const borderColor = 'hsl(0, 0%, 75%)'
     if (ioType === 'inputs') {
       handleSide = 'left'
       style = {
         ...baseStyle,
-        top: 0,
+        alignItems: 'flex-end',
         right: '100%',
         borderRight: `thin solid ${borderColor}`,
-        flexDirection: 'column',
       }
     } else if (ioType === 'outputs') {
-      handleSide = 'top'
+      handleSide = 'right'
       style = {
         ...baseStyle,
-        left: 0,
-        bottom: '100%',
-        borderBottom: `thin solid ${borderColor}`,
-        flexDirection: 'row',
+        alignItems: 'flex-start',
+        left: '100%',
+        borderLeft: `thin solid ${borderColor}`,
       }
     }
     const portViews = _.map(node.getPortsOfType({ioType}), (port) => {
