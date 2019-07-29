@@ -136,6 +136,7 @@ Wire.fromSpec = async (spec) => {
   const { id, builderFn } = spec
   const wire = new Wire({id})
   wire.builderFn = builderFn
+  wire.srcCode = builderFn.srcCode || builderFn.toString()
   await builderFn(wire)
   return wire
 }

@@ -3,11 +3,13 @@ import _ from 'lodash'
 
 import DragContainer from './DragContainer.js'
 import { DraggableNodeView } from './NodeView.js'
-import WireView from './WireView.js'
+import { DraggableWireView } from './WireView.js'
+import WireLineView from './WireLineView.js'
 
 import ObservableMapStore from '../engine/ObservableMapStore.js'
 import Graph from '../engine/Graph.js'
 import Node from '../engine/Node.js'
+import Wire from '../engine/Wire.js'
 
 
 class GraphView extends React.Component {
@@ -18,6 +20,7 @@ class GraphView extends React.Component {
     }
     this.nodeViews = {}
     this.wireViews = {}
+    this.wireLineViews = {}
     this._wiresFromNode = {}
     this._wiresToNode = {}
     this.wiresContainerRef = React.createRef()
@@ -26,8 +29,6 @@ class GraphView extends React.Component {
   render () {
     const { graph } = this.props
     if (! graph) { return null }
-    const nodes = graph.getNodes()
-    const wires = graph.getWires()
     const gridColor = '#eee'
     const style = {
       position: 'absolute',
@@ -48,23 +49,28 @@ class GraphView extends React.Component {
             overflow: 'scroll',
           }}
         >
-          {this.renderNodeViews({nodes})}
-          {this.renderWireViews({wires})}
+          {this.renderCells()}
         </div>
       </div>
     )
   }
 
-  renderNodeViews ({nodes}) {
+  renderCells () {
+    const {graph} = this.props
     return (
       <DragContainer
-        className='nodes-container'
+        className='cells-container'
         style={{position: 'absolute', zIndex: 10}}
-        onDragEnd={() => this.updateWireViews()}
+        onDragEnd={() => this.updateWireLineViews()}
       >
         {
-          _.filter(nodes, (node) => !node.hidden).map((node) => {
+          _.filter(graph.getNodes(), (node) => !node.hidden).map((node) => {
             return this.renderDraggableNodeView(node)
+          })
+        }
+        {
+          _.filter(graph.getWires(), (wire) => !wire.hidden).map((wire) => {
+            return this.renderDraggableWireView(wire)
           })
         }
       </DragContainer>
@@ -114,7 +120,35 @@ class GraphView extends React.Component {
     return store
   }
 
-  renderWireViews ({wires}) {
+  renderDraggableWireView (wire) {
+    const { graph } = this.props
+    const store = this.getStore()
+    const posKey = `${wire.id}-pos`
+    return (
+      <DraggableWireView
+        showDebug={false}
+        key={wire.id}
+        wire={wire}
+        pos={store.getOrCreate({
+          key: posKey,
+          factoryFn: () => ({x: 0, y:0}),
+        })}
+        ref={(el) => { this.wireViews[wire.id] = el }}
+        afterMount={(el) => { this.wireViews[wire.id] = el }}
+        beforeUnmount={() => { delete this.wireViews[wire.id] }}
+        onDragEnd={({pos}) => {
+          store.set({key: posKey, value: pos})
+        }}
+        onChangeSrcCode={async ({wire, code}) => {
+          const nextWire = new Wire({id: wire.id})
+          await this.compileAndEvalWireBuilderFnCode({wire: nextWire, code})
+          graph.replaceWire({wire: nextWire})
+        }}
+      />
+    )
+  }
+
+  renderWireLineViews ({wires}) {
     return (
       <div
         className='wires-container'
@@ -139,7 +173,6 @@ class GraphView extends React.Component {
         >
           {
             _.map(wires, (wire, key) => {
-              //return this.renderWireView({wire, key})
               return (<text key={wire.id}>{wire.id}</text>)
             })
           }
@@ -148,13 +181,13 @@ class GraphView extends React.Component {
     )
   }
 
-  renderWireView ({wire, key}) {
+  renderWireLineView ({wire, key}) {
     return (
-      <WireView
+      <WireLineView
         key={key}
         wire={wire}
         ref={(el) => {
-          this.wireViews[key] = el
+          this.wireLineViews[key] = el
         }}
       />
     )
@@ -167,7 +200,7 @@ class GraphView extends React.Component {
       this.setState({graphVersion: this.state.graphVersion + 1})
     }, 0)
     graph.changed.add(this.onGraphChanged)
-    this.updateWireViews()
+    this.updateWireLineViews()
   }
 
   componentWillUnmount () {
@@ -180,21 +213,23 @@ class GraphView extends React.Component {
   }
 
   componentDidUpdate () {
-    this.updateWireViews()
+    this.updateWireLineViews()
   }
 
-  updateWireViews () {
+  updateWireLineViews () {
+    console.warn('TK')
+    return
     const containerPagePos = _.pick(
       this.wiresContainerRef.current.getBoundingClientRect(),
       ['x', 'y']
     )
-    for (let wireView of Object.values(this.wireViews)) {
-      this.updateWireViewPos({wireView, containerPagePos})
+    for (let wireLineView of Object.values(this.wireLineViews)) {
+      this.updateWireLineViewPos({wireLineView, containerPagePos})
     }
   }
 
-  updateWireViewPos ({wireView, containerPagePos}) {
-    const wire = wireView.getWire()
+  updateWireLineViewPos ({wireLineView, containerPagePos}) {
+    const wire = wireLineView.getWire()
     const srcNodeView = this.nodeViews[wire.src.node.id]
     const srcPortView = srcNodeView.getPortView({
       ioType: 'outputs',
@@ -205,7 +240,7 @@ class GraphView extends React.Component {
       ioType: 'inputs',
       portId: wire.dest.port.id,
     })
-    wireView.setPositions({
+    wireLineView.setPositions({
       src: this.getOffsetPos({
         absPos: srcPortView.getHandlePagePos(),
         refPos: containerPagePos

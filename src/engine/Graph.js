@@ -122,7 +122,7 @@ export class Graph {
   getWiresForPort ({port}) {
     const terminalKey = [port.node.key, port.ioType, port.key].join(':')
     const bySrcDest = (port.ioType === 'inputs') ? 'byDest' : 'bySrc'
-    return this._wireLookup[bySrcDest][terminalKey]
+    return _.get(this._wireLookup[bySrcDest], terminalKey, [])
   }
 
   tickNodes () {

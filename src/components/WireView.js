@@ -1,65 +1,166 @@
 import React from 'react'
+import _ from 'lodash'
+import { Button } from 'semantic-ui-react'
 
-const BEZIER_OFFSET = 50
+import CodeEditor from './CodeEditor.js'
+import WindowPortal from './WindowPortal.js'
 
-class WireView extends React.Component {
+
+export class WireView extends React.Component {
   constructor (props) {
     super(props)
     this.state = {
-      srcPosition: null,
-      destPosition: null,
-      visibility: 'visible',
+      wireVersion: 0,
+      srcPopupIsVisible: false,
     }
+    this.portViews = {
+      inputs: {},
+      outputs: {},
+    }
+  }
+
+  componentDidMount () {
+    const { wire } = this.props
+    if (! wire ) { return }
+    this.onWireChanged = _.debounce(() => {
+      this.setState({wireVersion: this.state.wireVersion + 1})
+    }, 0)
+    wire.changed.add(this.onWireChanged)
+    if (this.props.afterMount) { this.props.afterMount(this) }
+  }
+
+  componentWillUnmount () {
+    const { wire } = this.props
+    if (! wire) { return }
+    if (this.onWireChange) {
+      wire.changed.remove(this.onWireChanged)
+    }
+    if (this.props.beforeUnmount) { this.props.beforeUnmount(this) }
   }
 
   render () {
     return (
-      <path
-        d={this.positionsToD()}
-        fill='none'
+      <div
+        className='wire'
+        ref={this.props.rootRef}
+        style={Object.assign(
+          {
+            pointerEvents: 'none',
+          },
+          this.props.style
+        )}
+      >
+        <div style={{position: 'relative'}}>
+          {this.renderPanes()}
+        </div>
+      </div>
+    )
+  }
+
+  renderPanes () {
+    return (
+      <div
         style={{
-          fill: 'none',
-          strokeWidth: 3,
-          stroke: 'hsla(0, 0%, 50%, .9)',
-          visibility: this.state.visibility,
-          ...(this.props.style || {}),
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          pointerEvents: 'none',
+        }}
+      >
+        {this.renderLabel()}
+        {this.renderCodePane()}
+      </div>
+    )
+  }
+
+  renderCodePane () {
+    const style = {
+      borderRadius: '5px',
+      border: 'thin solid hsl(0, 0%, 90%)',
+      pointerEvents: 'all',
+    }
+    return (
+      <div style={style}>
+        {this.renderCodeEditor()}
+      </div>
+    )
+  }
+
+  renderLabel () {
+    const {wire} = this.props
+    return (
+      <div
+        ref={this.props.labelRef}
+        style={{
+          alignSelf: 'stretch',
+          backgroundColor: '#333',
+          color: '#ddd',
+          padding: '.1em .5em',
+          pointerEvents: 'all',
+        }}
+      >
+        {wire.label || wire.id}
+      </div>
+    )
+  }
+
+  renderCodeEditor () {
+    const {wire} = this.props
+    return (
+      <CodeEditor
+        cmOpts={{keyMap: 'vim'}}
+        style={{
+          fontSize: '8px',
+        }}
+        defaultValue={wire.srcCode || ''}
+        onSave={async ({code}) => {
+          await this.props.onChangeSrcCode({wire, code})
         }}
       />
     )
   }
 
-  positionsToD () {
-    const src = this.state.srcPosition
-    const dest = this.state.destPosition
-    if (! src || ! dest) { return null }
-    const dParts = [
-      'M', [src.x, src.y].join(','),
-      'C',
-      [src.x + BEZIER_OFFSET, src.y + BEZIER_OFFSET].join(','),
-      [dest.x - BEZIER_OFFSET, dest.y].join(','),
-      [dest.x, dest.y].join(',')
-    ]
-    return dParts.join(' ')
+  renderSrcEditorFrob ({wire}) {
+    const frob = (
+      <React.Fragment>
+        <Button
+          size='mini'
+          compact={true}
+          onClick={() => {
+            wire.state.set('srcIsOpen', !(wire.state.get('srcIsOpen')))
+          }}
+          content='src'
+        />
+        {wire.state.get('srcIsOpen') ? this.renderCodeEditorPortal(wire) : null}
+      </React.Fragment>
+    )
+    return frob
   }
 
-  componentDidMount () {
-    if (this.props.afterMount) { this.props.afterMount(this) }
+  renderCodeEditorPortal () {
+    const {wire} = this.props
+    return (
+      <WindowPortal
+        closeOnUnmount={false}
+        windowName={[wire.id, 'src'].join(':')}
+        styles={[...Object.values(CodeEditor.styles)]}
+        scripts={[...Object.values(CodeEditor.scripts)]}
+        beforeUnload={() => wire.state.set('srcIsOpen', false)}
+      >
+        {this.renderCodeEditor()}
+      </WindowPortal>
+    )
   }
+}
 
-  componentWillUnmount () {
-    if (this.props.beforeUnmount) {this.props.beforeUnmount(this)}
-  }
-
-  getWire () {
-    return this.props.wire
-  }
-
-  setPositions ({src, dest}) {
-    this.setState({srcPosition: src, destPosition: dest})
-  }
-
-  setVisibility (visibility) {
-    this.setState({visibility})
+export class DraggableWireView extends React.Component {
+  render () {
+    const decoratedProps = {
+      ...this.props,
+      labelRef: this.props.dragHandleRef,
+      rootRef: this.props.dragContainerRef,
+    }
+    return (<WireView {...decoratedProps} />)
   }
 }
 

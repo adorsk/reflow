@@ -22,6 +22,7 @@ export class Node {
       quenchHotInputsAfterTick: true,
     }, opts.behaviors)
     this.builderFn = opts.builderFn
+    this.srcCode = opts.srcCode
     this.changed = new signals.Signal()
     this.tickFn = opts.tickFn
     this.setState(opts.state || new Map())
@@ -329,7 +330,7 @@ export class Node {
   }
 
   getWiresForPort ({port}) {
-    this.graph.getWiresForPort({port})
+    return this.graph.getWiresForPort({port})
   }
 }
 
@@ -341,6 +342,7 @@ Node.fromSpec = async (spec) => {
   const { id, builderFn } = spec
   const node = new Node({id})
   node.builderFn = builderFn
+  node.srcCode = builderFn.srcCode || builderFn.toString()
   await builderFn(node)
   return node
 }
