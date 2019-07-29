@@ -18,8 +18,8 @@ export class Wire {
     this.SYMBOLS = SYMBOLS
     this.ctx = opts.ctx || {}
     this.id = opts.id
-    this.specFactoryFn = opts.specFactoryFn
-    this.srcCode = opts.srcCode || _.get(this.specFactoryFn, 'srcCode')
+    this.builderFn = opts.builderFn
+    this.srcCode = opts.srcCode || _.get(this.builderFn, 'srcCode')
     this.src = opts.src
     this.dest = opts.dest
     this.srcCode = opts.srcCode
@@ -122,63 +122,22 @@ export class Wire {
     this.changed.removeAll()
   }
 
-  static fromSpec ({wireSpec = {}, nodesByKey = {}} = {}) {
-    if (_.isString(wireSpec)) {
-      const [srcSpec, destSpec] = wireSpec.split(
-        new RegExp(`\\s*${Wire.TERMINALS_SEPARATOR}\\s*`))
-      wireSpec = {src: srcSpec, dest: destSpec}
-    }
-    const terminals = {}
-    for (let srcDest of ['src', 'dest']) {
-      let terminalSpec = wireSpec[srcDest]
-      if (_.isString(terminalSpec)) {
-        const [nodeKey, portId] = terminalSpec.split(Wire.NODE_PORT_SEPARATOR)
-        terminalSpec = {nodeKey, portId}
-      }
-      const node = terminalSpec.node || nodesByKey[terminalSpec.nodeKey]
-      const port = (terminalSpec.port || node.getPort({
-        ioType: ((srcDest === 'src') ? 'outputs' : 'inputs'),
-        portId: terminalSpec.portId,
-      }))
-      terminals[srcDest] = {node, port}
-    }
-    const wire = new Wire({
-      ...wireSpec,
-      id: wireSpec.id || Wire.idFromTerminals({terminals}),
-      ...terminals,
-      behaviors: wireSpec.behaviors,
-    })
-    return wire
-  }
-
-  static idFromTerminals ({terminals}) {
-    return ['src', 'dest'].map((srcDest) => {
-      const term = terminals[srcDest]
-      return [term.node.id, term.port.id].join(Wire.NODE_PORT_SEPARATOR)
-    }).join(` ${Wire.TERMINALS_SEPARATOR} `)
-  }
-
   getSpec () {
-    let spec
-    if (this.ctx.getSpec) {
-      spec = this.ctx.getSpec()
-    } else {
-      spec = { factoryFn: this.factoryFn }
+    const spec = {
+      id: this.id,
+      builderFn: this.builderFn,
     }
     return spec
   }
 }
 
-Wire.deserializeSpec = async (serializedSpec) => {
-  let spec
-  if (serializedSpec.specFactoryFn) {
-    spec = await serializedSpec.specFactoryFn()
-    spec.specFactoryFn = serializedSpec.specFactoryFn
-    spec.srcCode = serializedSpec.specFactoryFn.srcCode
-  } else {
-    spec = serializedSpec
-  }
-  return spec
+
+Wire.fromSpec = async (spec) => {
+  const { id, builderFn } = spec
+  const wire = new Wire({id})
+  wire.builderFn = builderFn
+  await builderFn(wire)
+  return wire
 }
 
 export default Wire

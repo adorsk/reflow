@@ -16,11 +16,12 @@ export class Node {
     this.id = opts.id || _.uniqueId('node-')
     this.key = opts.key || _.uniqueId('node-')
     this.label = opts.label
+    this.setGraph(opts.graph)
     this.behaviors = Object.assign({
       drainIncomingHotWiresBeforeTick: true,
       quenchHotInputsAfterTick: true,
     }, opts.behaviors)
-    this.factoryFn = opts.factoryFn
+    this.builderFn = opts.builderFn
     this.changed = new signals.Signal()
     this.tickFn = opts.tickFn
     this.setState(opts.state || new Map())
@@ -34,6 +35,10 @@ export class Node {
     }
     this.debouncedTick = _.debounce(this.tick.bind(this), 0)
     this.errors = []
+  }
+
+  setGraph (graph) {
+    this.graph = graph
   }
 
   init () {
@@ -58,6 +63,7 @@ export class Node {
     port.setNode(this)
     port.key = [port.ioType, port.id].join(':')
     this.ports[port.key] = port
+    this.state.get(this.SYMBOLS.PORT_STATES).set(port.key, port.state)
   }
 
   addOutput (key, portOpts = {}) {
@@ -84,6 +90,33 @@ export class Node {
       const port = this.ports[portKey]
       if (! port) { continue }
       port.setState(portStates.get(portKey))
+    }
+  }
+
+  clearState () {
+    for (let key of this.state.keys()) {
+      if (key === this.SYMBOLS.PORT_STATES) { continue }
+      this.state.delete(key)
+    }
+    for (let port of this.getPorts()) {
+      port.clearState()
+    }
+  }
+
+  loadState (nextState) {
+    this.clearState()
+    for (let key of nextState.keys()) {
+      const value = nextState.get(key)
+      if (key === this.SYMBOLS.PORT_STATES) {
+        const portStates = value
+        for (let portKey of portStates.keys()) {
+          const port = this.ports[portKey]
+          if (! port) { continue }
+          port.loadState(portStates.get(portKey))
+        }
+      } else {
+        this.state.set(key, value)
+      }
     }
   }
 
@@ -276,7 +309,7 @@ export class Node {
   getSpec () {
     const spec = {
       id: this.id,
-      factoryFn: this.factoryFn,
+      builderFn: this.builderFn,
     }
     return spec
   }
@@ -294,6 +327,10 @@ export class Node {
     }
     return inputValues
   }
+
+  getWiresForPort ({port}) {
+    this.graph.getWiresForPort({port})
+  }
 }
 
 
@@ -301,9 +338,10 @@ class InputsError extends Error {}
 Node.InputsError = InputsError
 
 Node.fromSpec = async (spec) => {
-  const { id, factoryFn } = spec
-  const node = await factoryFn()
-  node.id = id
+  const { id, builderFn } = spec
+  const node = new Node({id})
+  node.builderFn = builderFn
+  await builderFn(node)
   return node
 }
 

@@ -11,12 +11,10 @@ describe('Node', () => {
   })
 
   const genBasicNode = () => {
-    const node = Node.fromSpec({
-      portSpecs: {
-        inputs: {'in1': {}},
-        outputs: {'out1': {}},
-      }
-    })
+    const node = new Node()
+    node.addInput('in1')
+    node.addOutput('out1')
+    node.init()
     return node
   }
 
@@ -50,10 +48,11 @@ describe('Node', () => {
       it('adds listener for port.pushed event', () => {
         const node = new Node()
         let changeCounter = 0
+        const port = new Port({ioType: 'inputs'})
+        node.addPort({port})
+        node.init()
         node.changed.add(() => changeCounter++)
         expect(changeCounter).toEqual(0)
-        const port = new Port()
-        node.addPort({port, ioType: 'inputs'})
         port.pushValue('someValue')
         expect(changeCounter).toEqual(1)
       })
@@ -63,10 +62,10 @@ describe('Node', () => {
   describe('getPort', () => {
     it('returns expected ports', () => {
       const node = new Node()
-      const inPort = new Port({id: 'in'})
-      const outPort = new Port({id: 'out'})
-      node.addPort({port: inPort, ioType: 'inputs'})
-      node.addPort({port: outPort, ioType: 'outputs'})
+      const inPort = new Port({id: 'in', ioType: 'inputs'})
+      const outPort = new Port({id: 'out', ioType: 'outputs'})
+      node.addPort({port: inPort})
+      node.addPort({port: outPort})
       expect(node.getPort('inputs:in')).toBe(inPort)
       expect(node.getPort('outputs:out')).toBe(outPort)
     })
@@ -102,21 +101,6 @@ describe('Node', () => {
       }
       const actualSerializedPortStates = node.serializePortStates()
       expect(actualSerializedPortStates).toEqual(expectedSerializedPortStates)
-    })
-  })
-
-  describe('getSerializedSpec', () => {
-    it('uses ctx.getSerializedSpec if present', () => {
-      const node = genBasicNode()
-      node.ctx.getSerializedSpec = () => 'mockSpec'
-      expect(node.getSerializedSpec()).toEqual('mockSpec')
-    })
-
-    it('uses specFactoryFn if no ctx.getSerializedSpec', () => {
-      const node = genBasicNode()
-      node.specFactoryFn = 'mockSpec'
-      const expectedSerializedSpec = { specFactoryFn: node.specFactoryFn }
-      expect(node.getSerializedSpec()).toEqual(expectedSerializedSpec)
     })
   })
 

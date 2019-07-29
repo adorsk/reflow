@@ -30,7 +30,6 @@ class Port {
     this.setState(opts.state || new Map())
     this.ioType = opts.ioType
     this.ctx = opts.ctx || {}
-    this.wires = []
   }
 
   init () {
@@ -149,8 +148,8 @@ class Port {
   quench () { this.state.set('hot', false) }
   isHot () { return this.state.get('hot') }
 
-  addWire ({wire}) {
-    this.wires.push(wire)
+  get wires () {
+    return this.node.getWiresForPort({port: this})
   }
 
   get mostRecentPacket () {

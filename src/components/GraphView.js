@@ -139,7 +139,8 @@ class GraphView extends React.Component {
         >
           {
             _.map(wires, (wire, key) => {
-              return this.renderWireView({wire, key})
+              //return this.renderWireView({wire, key})
+              return (<text key={wire.id}>{wire.id}</text>)
             })
           }
         </svg>

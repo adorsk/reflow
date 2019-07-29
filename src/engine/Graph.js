@@ -10,6 +10,13 @@ const SYMBOLS = {
   WIRE_STATES: ':WIRE_STATES:',
 }
 
+const STRUCTURE_CHANGE_EVENTS = [
+  'node:add',
+  'node:remove',
+  'wire:add',
+  'wire:remove',
+]
+
 export class Graph {
 
   constructor ({id, label, state = new Map()} = {}) {
@@ -24,6 +31,7 @@ export class Graph {
     this.changed = new signals.Signal()
     this.debouncedTick = _.debounce(this.tick, 0)
     this.changed.add(this.onChanged.bind(this))
+    this._wireLookup = {}
   }
 
   createStore () {
@@ -43,10 +51,35 @@ export class Graph {
   get nodeStates () { return this.state.get(this.SYMBOLS.NODE_STATES) }
 
   onChanged (evt) {
-    if (evt && evt.type && evt.type === 'node') {
+    if (evt && STRUCTURE_CHANGE_EVENTS.includes(evt.type)) {
+      this.onGraphStructureChange(evt)
+    }
+    if (evt && evt.type === 'node') {
       if (evt.data && evt.data.type === 'errors') { return }
     }
     this.debouncedTick()
+  }
+
+  onGraphStructureChange () {
+    this._wireLookup = this.generateWireLookup()
+  }
+
+  generateWireLookup () {
+    const wireLookup = {
+      bySrc: {},
+      byDest: {},
+    }
+    for (let wire of Object.values(this.wires)) {
+      if (wire.src) {
+        if (!(wire.src in wireLookup.bySrc)) { wireLookup.bySrc[wire.src] = [] }
+        wireLookup.bySrc[wire.src].push(wire)
+      }
+      if (wire.dest) {
+        if (!(wire.dest in wireLookup.byDest)) { wireLookup.byDest[wire.dest] = [] }
+        wireLookup.byDest[wire.dest].push(wire)
+      }
+    }
+    return wireLookup
   }
 
   tick () {
@@ -86,6 +119,12 @@ export class Graph {
     _.pullAt(port.packets, indicesOfPacketsToDrain) // mutates port.packets
   }
 
+  getWiresForPort ({port}) {
+    const terminalKey = [port.node.key, port.ioType, port.key].join(':')
+    const bySrcDest = (port.ioType === 'inputs') ? 'byDest' : 'bySrc'
+    return this._wireLookup[bySrcDest][terminalKey]
+  }
+
   tickNodes () {
     for (let node of Object.values(this.nodes)) {
       this.tickNode(node)
@@ -107,7 +146,13 @@ export class Graph {
 
   getWires () { return this.wires }
 
+  async addNodeFromSpec ({nodeSpec}) {
+    const node = await Node.fromSpec(nodeSpec)
+    this.addNode({node})
+  }
+
   addNode ({node, state}) {
+    node.setGraph(this)
     this.nodes[node.id] = node
     this.nodesByKey[node.key] = node
     const nodeStates = this.state.get(SYMBOLS.NODE_STATES)
@@ -131,23 +176,18 @@ export class Graph {
     if (this.nodes[nodeId]) { this.nodes[nodeId].unmount() }
     this.state.get(this.SYMBOLS.NODE_STATES).delete(nodeId)
     delete this.nodes[nodeId]
+    this.changed.dispatch({type: 'node:remove', data: {nodeId}})
   }
 
-  async addWireFromSpec ({wireSpec, opts}) {
-    const wire = await Wire.fromSpec({wireSpec, nodesByKey: this.nodesByKey})
-    const wireStates = this.state.get(this.SYMBOLS.WIRE_STATES)
-    if (! wireStates.has(wire.id)) {
-      wireStates.set(wire.id, new Map())
-    }
-    wire.setState(wireStates.get(wire.id))
-    wire.init()
-    this.addWire({wire, opts})
+  async addWireFromSpec ({wireSpec}) {
+    const wire = await Wire.fromSpec(wireSpec)
+    this.addWire({wire})
   }
 
   addWire ({wire, opts = {noSignals: false}}) {
     this.wires[wire.id] = wire
-    wire.src.port.addWire({wire})
-    wire.dest.port.addWire({wire})
+    const wireStates = this.state.get(SYMBOLS.WIRE_STATES)
+    wireStates.set(wire.id, wireStates.get(wire.id) || new Map())
     wire.changed.add((evt) => this.changed.dispatch({type: 'wire', data: evt}))
     if (!opts.noSignals) {
       this.changed.dispatch({type: 'wire:add', data: {wire}})
@@ -157,6 +197,7 @@ export class Graph {
   removeWire ({wire, key}) {
     this.wires[wire.id].unmount()
     delete this.wires[key]
+    this.changed.dispatch({type: 'wire:remove', data: {wire, key}})
   }
 
   unmount () {
