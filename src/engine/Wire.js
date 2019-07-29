@@ -4,6 +4,8 @@ import signals from 'signals'
 
 import Packet from './Packet.js'
 
+import { transformAndCompileCode } from '../utils/index.js'
+
 const SYMBOLS = {
   DISPOSER: Symbol('DISPOSER'),
   PACKETS: ':PACKETS:',
@@ -135,9 +137,12 @@ export class Wire {
 Wire.fromSpec = async (spec) => {
   const { id, builderFn } = spec
   const wire = new Wire({id})
-  wire.builderFn = builderFn
+  wire.builderFn = (
+    (typeof builderFn === 'string') ? transformAndCompileCode(builderFn)
+    : builderFn
+  )
   wire.srcCode = builderFn.srcCode || builderFn.toString()
-  await builderFn(wire)
+  await wire.builderFn(wire)
   return wire
 }
 

@@ -3,6 +3,8 @@ import { observable } from 'mobx'
 import signals from 'signals'
 
 import Port from './Port.js'
+import { transformAndCompileCode } from '../utils/index.js'
+
 
 const SYMBOLS = {
   DISPOSER: Symbol('disposer_key'),
@@ -341,9 +343,12 @@ Node.InputsError = InputsError
 Node.fromSpec = async (spec) => {
   const { id, builderFn } = spec
   const node = new Node({id})
-  node.builderFn = builderFn
+  node.builderFn = (
+    (typeof builderFn === 'string') ? transformAndCompileCode(builderFn)
+    : builderFn
+  )
   node.srcCode = builderFn.srcCode || builderFn.toString()
-  await builderFn(node)
+  await node.builderFn(node)
   return node
 }
 
