@@ -148,6 +148,10 @@ class GraphView extends React.Component {
     )
   }
 
+  async compileAndEvalWireBuilderFnCode ({wire, code}) {
+    return this.props.compileAndEvalWireBuilderFnCode({wire, code})
+  }
+
   renderWireLineViews ({wires}) {
     return (
       <div

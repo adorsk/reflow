@@ -1,5 +1,9 @@
 import Transformer from './Transformer.js'
 
+
+// eslint-disable-next-line
+export const AsyncFunction = eval(`Object.getPrototypeOf(async function(){}).constructor`)
+
 const transformer = new Transformer()
 
 export const getPagePos = (el) => {

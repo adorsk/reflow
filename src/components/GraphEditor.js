@@ -8,16 +8,13 @@ import ObservableMapStore from '../engine/ObservableMapStore.js'
 import Cryo from '../utils/cryo/cryo.js'
 import dedent from '../utils/dedent.js'
 import {
+  AsyncFunction,
   transformCode,
   transformAndCompileCode,
   uuid4 } from '../utils/index.js'
 import CodeEditor from './CodeEditor.js'
 import { EvaluationError, CompilationError } from '../utils/Errors.js'
-import reflowCtx from '../utils/reflowCtx.js'
 import Node from '../engine/Node.js'
-
-// eslint-disable-next-line
-const AsyncFunction = eval(`Object.getPrototypeOf(async function(){}).constructor`)
 
 
 class GraphEditor extends React.Component {
@@ -378,27 +375,44 @@ class GraphEditor extends React.Component {
         graph={graph}
         store={graphViewStore}
         compileAndEvalNodeBuilderFnCode={this.compileAndEvalNodeBuilderFnCode.bind(this)}
+        compileAndEvalWireBuilderFnCode={this.compileAndEvalWireBuilderFnCode.bind(this)}
       />
     )
   }
 
   async compileAndEvalNodeBuilderFnCode ({node, code}) {
-    let nodeBuilderFn
+    return this.compileAndEvalObjBuilderFnCode({
+      obj: node,
+      fnArgName: 'node',
+      code
+    })
+  }
+
+  async compileAndEvalObjBuilderFnCode ({obj, fnArgName='', code}) {
+    let builderFn
     try {
       const transformedCode = transformCode(code)
-      nodeBuilderFn = AsyncFunction('node', transformedCode)
-      nodeBuilderFn.srcCode = code
+      builderFn = AsyncFunction(fnArgName, transformedCode)
+      builderFn.srcCode = code
     } catch (err) {
       throw new CompilationError(err)
     }
     try {
-      await nodeBuilderFn(node)
-      node.builderFn = nodeBuilderFn
-      node.srcCode = node.builderFn.srcCode
+      await builderFn(obj)
+      obj.builderFn = builderFn
+      obj.srcCode = obj.builderFn.srcCode
     } catch (err) {
       throw new EvaluationError(err)
     }
-    return node
+    return obj
+  }
+
+  async compileAndEvalWireBuilderFnCode ({wire, code}) {
+    return this.compileAndEvalObjBuilderFnCode({
+      obj: wire,
+      fnArgName: 'wire',
+      code
+    })
   }
 }
 

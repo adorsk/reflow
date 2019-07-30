@@ -2,6 +2,32 @@ import React from 'react'
 import _ from 'lodash'
 import { ChromePicker } from 'react-color'
 
+//import { transformCode } from './index.js'
+
+
+export const EvalInput = (props) => {
+  const { port } = props
+  return (
+    <input onBlur={(evt) => {
+      let value
+      let succeeded = false
+      try { 
+        /*
+        const fnBody = transformCode(evt.target.value)
+        // eslint-disable-next-line
+        value = (new Function(fnBody))()
+        */
+        // eslint-disable-next-line
+        value = eval(evt.target.value)
+        succeeded = true
+      } catch (err) {}
+      if (succeeded) {
+        port.pushValue(value)
+      }
+    }} />
+  )
+}
+
 
 export const NumberInput = (props) => {
   const { port } = props

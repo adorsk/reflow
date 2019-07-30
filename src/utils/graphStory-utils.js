@@ -4,7 +4,7 @@ import PouchDB from 'pouchdb-browser'
 import { storiesOf } from '@storybook/react'
 
 import ObservableMapStore from '../engine/ObservableMapStore.js'
-import GraphView from '../components/GraphView.js'
+import GraphEditor from '../components/GraphEditor.js'
 
 export async function createStores ({namespace}) {
   const engineStore = new ObservableMapStore()
@@ -46,7 +46,7 @@ export const memoizedCreateStores = _.memoize(
 )
 
 
-export class PersistentGraphView extends React.Component {
+export class PersistentGraphEditor extends React.Component {
   state = { graph: null, viewStore: null}
 
   componentDidMount() {
@@ -60,14 +60,20 @@ export class PersistentGraphView extends React.Component {
   render() {
     const { graph, viewStore} = this.state
     if (!graph || !viewStore) { return null }
-    return (<GraphView store={viewStore} graph={graph} />)
+    return (
+      <GraphEditor
+        store={viewStore}
+        graph={graph} 
+        style={{width: '100vw', height: '100vh'}}
+      />
+    )
   }
 }
 
 export function addGraphStory ({namespace, graphFactory, module}) {
   storiesOf(namespace, module).add('default', () => {
     return (
-      <PersistentGraphView
+      <PersistentGraphEditor
         graphFactory={graphFactory}
         storesFactory={() => memoizedCreateStores({namespace})}
       />

@@ -29,7 +29,7 @@ class Port {
     this.setNode(opts.node)
     this.setState(opts.state || new Map())
     this.ioType = opts.ioType
-    this.ctx = opts.ctx || {}
+    this.guiType = opts.guiType || 'eval'
   }
 
   init () {
@@ -63,7 +63,9 @@ class Port {
     if (! state.has(this.SYMBOLS.PACKETS)) {
       state.set(this.SYMBOLS.PACKETS, observable([], {deep: false}))
     }
-    this[this.SYMBOLS.DISPOSER] = state.observe(this.changed.dispatch)
+    this[this.SYMBOLS.DISPOSER] = state.observe(() => {
+      this.changed.dispatch({type: 'state:changed'})
+    })
     this.state = state
   }
 

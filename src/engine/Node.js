@@ -3,7 +3,7 @@ import { observable } from 'mobx'
 import signals from 'signals'
 
 import Port from './Port.js'
-import { transformAndCompileCode } from '../utils/index.js'
+import { AsyncFunction, transformCode } from '../utils/index.js'
 
 
 const SYMBOLS = {
@@ -53,25 +53,33 @@ export class Node {
 
   addPortListener ({port}) {
     port.changed.add((evt) => {
-      this.changed.dispatch({type: port.ioType, data: {port}})
+      this.changed.dispatch({type: 'port:changed', data: {port, evt}})
     })
   }
 
   addInput (key, portOpts = {}) {
-    const port = new Port({key, ...portOpts, ioType: Port.IO_TYPES.INPUTS})
-    this.addPort({port})
+    portOpts = {key, ...portOpts}
+    portOpts.id = portOpts.id || this._generatePortId()
+    portOpts.ioType = Port.IO_TYPES.INPUTS
+    this.addPort({port: new Port(portOpts)})
+  }
+
+  _generatePortId () {
+    return [this.id, _.uniqueId('port-')].join(':')
   }
 
   addPort ({port}) {
     port.setNode(this)
-    port.key = [port.ioType, port.id].join(':')
-    this.ports[port.key] = port
-    this.state.get(this.SYMBOLS.PORT_STATES).set(port.key, port.state)
+    const ioKey = this.getIoKeyForPort({port})
+    this.ports[ioKey] = port
+    this.state.get(this.SYMBOLS.PORT_STATES).set(port.id, port.state)
   }
 
   addOutput (key, portOpts = {}) {
-    const port = new Port({key, ...portOpts, ioType: Port.IO_TYPES.OUTPUTS})
-    this.addPort({port})
+    portOpts = {key, ...portOpts}
+    portOpts.id = portOpts.id || this._generatePortId()
+    portOpts.ioType = Port.IO_TYPES.OUTPUTS
+    this.addPort({port: new Port(portOpts)})
   }
 
   setState (state) {
@@ -191,14 +199,15 @@ export class Node {
     _.each(this.getInputPorts(), (port) => {
       for (let wire of port.wires) {
         if (! wire.isHot()) { return }
-        this.drainWire({wire})
+        this.drainWireToPort({port, wire})
       }
     })
   }
 
-  drainWire ({wire}) {
+  drainWireToPort ({port, wire}) {
     while (wire.hasPackets()) {
-      wire.dest.port.pushPacket(wire.shiftPacket())
+      const packet = wire.shiftPacket()
+      port.pushPacket(packet)
     }
     wire.quench()
   }
@@ -209,15 +218,19 @@ export class Node {
 
   getPort (portSpec) {
     if (typeof portSpec === 'string') {
-      const [ioType, portId] = portSpec.split(':')
-      portSpec = {ioType, portId}
+      const [ioType, key] = portSpec.split(':')
+      portSpec = {ioType, key}
     }
-    const portKey = [portSpec.ioType, portSpec.portId].join(':')
-    return this.ports[portKey]
+    const ioKey = this.getIoKeyForPort({port: portSpec})
+    return this.ports[ioKey]
   }
 
   getPorts () {
     return [...Object.values(this.ports)]
+  }
+
+  getIoKeyForPort ({port}) {
+    return [port.ioType, port.key].join(':')
   }
 
   getPortsOfType ({ioType}) {
@@ -318,7 +331,9 @@ export class Node {
   }
 
   getInputValues ({inputKeys=null} = {}) {
-    inputKeys = inputKeys || Object.keys(this.getInputPorts())
+    inputKeys = (
+      inputKeys || Object.values(this.getInputPorts()).map((port) => port.key)
+    )
     const inputValues = {}
     for (let inputKey of inputKeys) {
       const port = this.getPort('inputs:' + inputKey)
@@ -344,8 +359,9 @@ Node.fromSpec = async (spec) => {
   const { id, builderFn } = spec
   const node = new Node({id})
   node.builderFn = (
-    (typeof builderFn === 'string') ? transformAndCompileCode(builderFn)
-    : builderFn
+    (typeof builderFn === 'string') ? (
+      new AsyncFunction('node', transformCode(builderFn))
+    ) : builderFn
   )
   node.srcCode = builderFn.srcCode || builderFn.toString()
   await node.builderFn(node)

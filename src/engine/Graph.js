@@ -51,6 +51,7 @@ export class Graph {
   get nodeStates () { return this.state.get(this.SYMBOLS.NODE_STATES) }
 
   onChanged (evt) {
+    console.log("evt: ", evt)
     if (evt && STRUCTURE_CHANGE_EVENTS.includes(evt.type)) {
       this.onGraphStructureChange(evt)
     }
@@ -83,6 +84,7 @@ export class Graph {
   }
 
   tick () {
+    console.log(`tick #${this.tickCount}`)
     this.drainOutputs()
     this.tickNodes()
     this.tickCount += 1
@@ -97,6 +99,7 @@ export class Graph {
   drainNodeOutputs ({node}) {
     for (let port of Object.values(node.getOutputPorts())) {
       if (port.isHot()) {
+        console.log("p: ", port, "p.wires: ", port.wires)
         this.drainPortPackets({port, wires: port.wires})
         port.quench()
       }
@@ -160,8 +163,8 @@ export class Graph {
     nodeStates.set(node.id, state)
     this.setNodeState({node, state})
     this.addNodeListener({node})
-    node.init()
     this.changed.dispatch({type: 'node:add', data: {node}})
+    node.init()
   }
 
   setNodeState ({node, state}) {
@@ -169,7 +172,7 @@ export class Graph {
   }
 
   addNodeListener ({node}) {
-    node.changed.add((evt) => this.changed.dispatch({type: 'node', data: evt}))
+    node.changed.add((evt) => this.changed.dispatch({type: 'node:changed', data: evt}))
   }
 
   removeNode ({nodeId}) {
@@ -179,25 +182,39 @@ export class Graph {
     this.changed.dispatch({type: 'node:remove', data: {nodeId}})
   }
 
+  replaceNode ({node}) {
+    const state = node.state
+    this.removeNode({nodeId: node.id})
+    this.addNode({node, state})
+  }
+
   async addWireFromSpec ({wireSpec}) {
     const wire = await Wire.fromSpec(wireSpec)
     this.addWire({wire})
   }
 
-  addWire ({wire, opts = {noSignals: false}}) {
+  addWire ({wire, state, opts = {noSignals: false}}) {
     this.wires[wire.id] = wire
     const wireStates = this.state.get(SYMBOLS.WIRE_STATES)
-    wireStates.set(wire.id, wireStates.get(wire.id) || new Map())
-    wire.changed.add((evt) => this.changed.dispatch({type: 'wire', data: evt}))
+    state = state || wireStates.get(wire.id) || new Map()
+    wireStates.set(wire.id, state)
+    wire.setState(state)
     if (!opts.noSignals) {
       this.changed.dispatch({type: 'wire:add', data: {wire}})
     }
+    wire.changed.add((evt) => this.changed.dispatch({type: 'wire:changed', data: evt}))
   }
 
-  removeWire ({wire, key}) {
-    this.wires[wire.id].unmount()
-    delete this.wires[key]
-    this.changed.dispatch({type: 'wire:remove', data: {wire, key}})
+  removeWire ({wireId}) {
+    this.wires[wireId].unmount()
+    delete this.wires[wireId]
+    this.changed.dispatch({type: 'wire:remove', data: {wireId}})
+  }
+
+  replaceWire ({wire}) {
+    const state = wire.state
+    this.removeWire({wireId: wire.id})
+    this.addWire({wire, state})
   }
 
   unmount () {
@@ -225,12 +242,6 @@ export class Graph {
       },
       2
     )
-  }
-
-  replaceNode ({node}) {
-    const state = node.state
-    this.removeNode({nodeId: node.id})
-    this.addNode({node, state})
   }
 
   clearState () {

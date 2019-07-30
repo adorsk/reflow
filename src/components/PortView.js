@@ -4,6 +4,7 @@ import 'semantic-ui-css/semantic.min.css'
 import { Label, Popup } from 'semantic-ui-react'
 
 import { getPagePos } from '../utils/index.js'
+import { EvalInput } from '../utils/graphFactory-utils.js'
 
 
 export class PortView extends React.Component {
@@ -16,9 +17,6 @@ export class PortView extends React.Component {
     this.handleRef = React.createRef()
     this.labelRef = React.createRef()
     const port = props.port
-    if (port && port.ctx && port.ctx.getGuiComponent) {
-      this.GuiComponent = port.ctx.getGuiComponent({port})
-    }
   }
 
   render () {
@@ -188,8 +186,15 @@ export class PortView extends React.Component {
   }
 
   renderPortGui ({port}) {
-    const GuiComponent = this.GuiComponent
-    if (!GuiComponent) { return null }
+    let GuiComponent = port.getGuiComponent
+    if (!GuiComponent) {
+      if (port.guiType === 'eval') {
+        GuiComponent = EvalInput
+      }
+      else {
+        return null
+      }
+    }
     return (<GuiComponent port={port} />)
   }
 

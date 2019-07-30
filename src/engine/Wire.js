@@ -4,7 +4,7 @@ import signals from 'signals'
 
 import Packet from './Packet.js'
 
-import { transformAndCompileCode } from '../utils/index.js'
+import { AsyncFunction, transformCode } from '../utils/index.js'
 
 const SYMBOLS = {
   DISPOSER: Symbol('DISPOSER'),
@@ -18,7 +18,6 @@ export class Wire {
 
   constructor (opts = {}) {
     this.SYMBOLS = SYMBOLS
-    this.ctx = opts.ctx || {}
     this.id = opts.id
     this.builderFn = opts.builderFn
     this.srcCode = opts.srcCode || _.get(this.builderFn, 'srcCode')
@@ -48,7 +47,7 @@ export class Wire {
       state.set(this.SYMBOLS.PACKETS, observable([], {deep: false}))
     }
     this[this.SYMBOLS.DISPOSER] = state.observe(() => {
-      this.changed.dispatch({type: 'state'})
+      this.changed.dispatch({type: 'state:changed'})
     })
     this.state = state
   }
@@ -112,8 +111,9 @@ export class Wire {
     this.state.set('hot', true)
   }
 
-  shiftPacket (packet) {
-    return this.packets.shift()
+  shiftPacket () {
+    const packet = this.packets.shift()
+    return packet
   }
 
   hasPackets () { return this.packets.length > 0 }
@@ -138,8 +138,9 @@ Wire.fromSpec = async (spec) => {
   const { id, builderFn } = spec
   const wire = new Wire({id})
   wire.builderFn = (
-    (typeof builderFn === 'string') ? transformAndCompileCode(builderFn)
-    : builderFn
+    (typeof builderFn === 'string') ? (
+      new AsyncFunction('wire', transformCode(builderFn))
+    ) : builderFn
   )
   wire.srcCode = builderFn.srcCode || builderFn.toString()
   await wire.builderFn(wire)
